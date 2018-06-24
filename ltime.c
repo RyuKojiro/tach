@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <err.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/event.h>
@@ -9,6 +10,7 @@
 #include <time.h>
 
 #define NSEC_PER_SEC (1000000000L)
+#define columns (80 - 15) /* TODO: use screen width */
 
 static struct timespec timespec_subtract(const struct timespec *minuend,
 		const struct timespec *subtrahend) {
@@ -70,12 +72,27 @@ int main(int argc, char * const argv[]) {
 			 * timestamp columns.
 			 */
 			clock_gettime(CLOCK_MONOTONIC, &now);
-
 			const struct timespec diff = timespec_subtract(&now, &last);
-			#define columns (80 - 15)
+
+			bool wrap = false;
 			char buf[columns];
 			while (fgets(buf, columns, stdin)) {
-				printf("%8ld.%03ld ] %s", diff.tv_sec, diff.tv_sec, buf);
+				if(!wrap) {
+					printf("%8ld.%03ld", diff.tv_sec, diff.tv_sec);
+				}
+				else {
+					printf("            ");
+				}
+
+				printf(" ] %s", buf);
+
+				if(!strchr(buf, '\n')) {
+					printf("\n");
+					wrap = true;
+				}
+				else {
+					wrap = false;
+				}
 			}
 
 			last = now;
