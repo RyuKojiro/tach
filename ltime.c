@@ -43,6 +43,9 @@
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
 
+#define FMT_TS        "%8ld.%03ld"
+#define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
+
 static char *buf;
 static size_t bufsize;
 
@@ -153,7 +156,7 @@ int main(int argc, char * const argv[]) {
 					 * spanning ~3.17 years of runtime to not have problems
 					 * with running out of timestamp columns.
 					 */
-					printf("%8ld.%03ld", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
+					printf(FMT_TS, diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 				}
 				else {
 					/*
@@ -165,14 +168,14 @@ int main(int argc, char * const argv[]) {
 					printf("%*s", TS_WIDTH, "");
 				}
 
-				printf(" " COLOR_SEP " " COLOR_RESET " %s\n", buf);
+				printf(FMT_SEP "%s\n", buf);
 			}
 
 			/* Update the last timestamp to diff against */
 			last = now;
 		}
 
-		printf("%8ld.%03ld " COLOR_SEP " " COLOR_RESET " \r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
+		printf(FMT_TS FMT_SEP "\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 		fflush(stdout);
 	}
 	free(buf);
