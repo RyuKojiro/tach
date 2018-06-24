@@ -66,17 +66,22 @@ int main(int argc, char * const argv[]) {
 
 		/* There is only one event at a time */
 		if (nev) {
-			/*
-			 * 8 digits on the left-hand-side will allow for a process spanning
-			 * ~3.17 years of runtime to not have problems with running out of
-			 * timestamp columns.
-			 */
+			if (triggered.flags & EV_EOF) {
+				break;
+			}
+
+			/* Get the timestamp of this output, and calculate the offset */
 			clock_gettime(CLOCK_MONOTONIC, &now);
 			const struct timespec diff = timespec_subtract(&now, &last);
 
 			bool wrap = false;
 			char buf[columns];
 			while (fgets(buf, columns, stdin)) {
+				/*
+				 * 8 digits on the left-hand-side will allow for a process spanning
+				 * ~3.17 years of runtime to not have problems with running out of
+				 * timestamp columns.
+				 */
 				if(!wrap) {
 					printf("%8ld.%03ld", diff.tv_sec, diff.tv_sec);
 				}
@@ -86,6 +91,12 @@ int main(int argc, char * const argv[]) {
 
 				printf(" ] %s", buf);
 
+				/*
+				 * If there isn't a newline in this chunk -- perhaps there is
+				 * more than one screen-width's worth of data, or stdout was
+				 * fflushed without a newline -- then get the next chunk
+				 * prepared to be a wrap.
+				 */
 				if(!strchr(buf, '\n')) {
 					printf("\n");
 					wrap = true;
@@ -95,6 +106,7 @@ int main(int argc, char * const argv[]) {
 				}
 			}
 
+			/* Update the last timestamp to diff against */
 			last = now;
 		}
 	}
