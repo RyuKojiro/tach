@@ -1,5 +1,5 @@
 PROGNAME=ltime
-CFLAGS=-Wall -ggdb
+CFLAGS=-Wall -ggdb -std=c99
 SRCS=ltime.c
 OBJS=$(SRCS:.c=.o)
 
