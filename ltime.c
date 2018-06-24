@@ -134,16 +134,16 @@ int main(int argc, char * const argv[]) {
 	struct kevent triggered;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
+		/* Get the timestamp of this output, and calculate the offset */
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		const struct timespec diff = timespec_subtract(&now, &last);
+
 		/* There is only one event at a time */
 		if (nev) {
 			if (triggered.flags & EV_EOF) {
 				break;
 			}
-
-			/* Get the timestamp of this output, and calculate the offset */
-			struct timespec now;
-			clock_gettime(CLOCK_MONOTONIC, &now);
-			const struct timespec diff = timespec_subtract(&now, &last);
 
 			bool nl = false;
 			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
@@ -172,9 +172,6 @@ int main(int argc, char * const argv[]) {
 			last = now;
 		}
 
-		struct timespec now;
-		clock_gettime(CLOCK_MONOTONIC, &now);
-		const struct timespec diff = timespec_subtract(&now, &last);
 		printf("%8ld.%03ld " COLOR_SEP " " COLOR_RESET " \r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 		fflush(stdout);
 	}
