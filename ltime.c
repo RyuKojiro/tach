@@ -34,9 +34,10 @@
 #include <sysexits.h>
 #include <time.h>
 
-#define NSEC_PER_SEC (1000000000L)
-#define TS_WIDTH     (8 + 1 + 3) /* sec + '.' + nsec */
-#define SEP_WIDTH    (3) /* " ] " */
+#define NSEC_PER_MSEC (1000000L)
+#define NSEC_PER_SEC  (1000000000L)
+#define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
+#define SEP_WIDTH     (3) /* " ] " */
 
 static char *buf;
 static size_t bufsize;
@@ -87,7 +88,7 @@ int main(int argc, char * const argv[]) {
 	(void)argv;
 
 	const struct timespec timeout = {
-		.tv_nsec = NSEC_PER_SEC / 1000, /* 1ms */
+		.tv_nsec = NSEC_PER_MSEC,
 	};
 
 	struct kevent ev;
@@ -129,7 +130,7 @@ int main(int argc, char * const argv[]) {
 				 * timestamp columns.
 				 */
 				if(!wrap) {
-					printf("%8ld.%03ld", diff.tv_sec, diff.tv_nsec);
+					printf("%8ld.%03ld", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 				}
 				else {
 					printf("%*s", TS_WIDTH, "");
