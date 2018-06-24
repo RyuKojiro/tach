@@ -81,7 +81,7 @@ int main(int argc, char * const argv[]) {
 					printf("%8ld.%03ld", diff.tv_sec, diff.tv_sec);
 				}
 				else {
-					printf("            ");
+					printf("%*s", 8 + 1 + 3, "");
 				}
 
 				printf(" ] %s", buf);
