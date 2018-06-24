@@ -77,7 +77,7 @@ int main(int argc, char * const argv[]) {
 			clock_gettime(CLOCK_MONOTONIC, &now);
 
 			const struct timespec diff = timespec_subtract(&now, &last);
-			printf("%8lu.%3lu ] %s", diff.tv_sec, diff.tv_sec,
+			printf("%8ld.%03ld ] %s", diff.tv_sec, diff.tv_sec,
 					(const char *)triggered.data); // TODO: Solve newlines :(
 
 			last = now;
