@@ -56,6 +56,7 @@ int main(int argc, char * const argv[]) {
 
 	struct timespec last;
 	clock_gettime(CLOCK_MONOTONIC, &last);
+	const struct timespec start = last;
 
 	struct kevent triggered;
 	struct timespec now;
@@ -68,17 +69,21 @@ int main(int argc, char * const argv[]) {
 			 * ~3.17 years of runtime to not have problems with running out of
 			 * timestamp columns.
 			 */
-			struct timespec now;
 			clock_gettime(CLOCK_MONOTONIC, &now);
 
 			const struct timespec diff = timespec_subtract(&now, &last);
-			printf("%8ld.%03ld ] %s", diff.tv_sec, diff.tv_sec,
-					(const char *)triggered.data); // TODO: Solve newlines :(
+			#define columns (80 - 15)
+			char buf[columns];
+			while (fgets(buf, columns, stdin)) {
+				printf("%8ld.%03ld ] %s", diff.tv_sec, diff.tv_sec, buf);
+			}
 
 			last = now;
 		}
 	}
 
-	printf("I'm alive\n");
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	const struct timespec diff = timespec_subtract(&now, &start);
+	printf("Total: %8ld.%03ld\n", diff.tv_sec, diff.tv_sec);
 	return EX_OK;
 }
