@@ -57,6 +57,7 @@ int main(int argc, char * const argv[]) {
 	}
 
 	struct timespec last;
+	clock_gettime(CLOCK_MONOTONIC, &last);
 
 	int nev;
 	struct kevent triggered;
