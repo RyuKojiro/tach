@@ -36,8 +36,12 @@
 
 #define NSEC_PER_MSEC (1000000L)
 #define NSEC_PER_SEC  (1000000000L)
+
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
-#define SEP_WIDTH     (3) /* " ] " */
+#define SEP_WIDTH     (3) /* " | " */
+
+#define COLOR_RESET   "\x1b[0m"
+#define COLOR_SEP     "\x1b[30;47m"
 
 static char *buf;
 static size_t bufsize;
@@ -136,7 +140,7 @@ int main(int argc, char * const argv[]) {
 					printf("%*s", TS_WIDTH, "");
 				}
 
-				printf(" ] %s", buf);
+				printf(" " COLOR_SEP " " COLOR_RESET " %s", buf);
 
 				/*
 				 * If there isn't a newline in this chunk -- perhaps there is
