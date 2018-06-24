@@ -43,7 +43,7 @@ int main(int argc, char * const argv[]) {
 	(void)argv;
 
 	const struct timespec timeout = {
-		.tv_nsec = 1000000, /* 1ms */
+		.tv_nsec = NSEC_PER_SEC / 1000, /* 1ms */
 	};
 
 	struct kevent ev;
