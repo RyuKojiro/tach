@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <err.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,21 @@
 #define NSEC_PER_SEC (1000000000L)
 #define TS_WIDTH     (8 + 1 + 3) /* sec + '.' + nsec */
 #define SEP_WIDTH    (3) /* " ] " */
+
+static char *buf;
+static int bufsize;
+
+static void winch(int sig) {
+	assert(sig == SIGWINCH);
+
+	/* Get window size */
+	struct winsize w;
+	ioctl(fileno(stdout), TIOCGWINSZ, &w);
+
+	/* Update buffer */
+	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
+	buf = realloc(buf, (size_t)bufsize);
+}
 
 static struct timespec timespec_subtract(const struct timespec *minuend,
 		const struct timespec *subtrahend) {
@@ -65,10 +81,8 @@ int main(int argc, char * const argv[]) {
 	const struct timespec start = last;
 
 	/* Set up terminal width info */
-	struct winsize w;
-	ioctl(fileno(stdout), TIOCGWINSZ, &w);
-	int bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
-	char *buf = malloc(bufsize);
+	winch(SIGWINCH);
+	signal(SIGWINCH, winch);
 
 	struct kevent triggered;
 	struct timespec now;
