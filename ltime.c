@@ -47,7 +47,7 @@ int main(int argc, char * const argv[]) {
 	};
 
 	struct kevent ev;
-	EV_SET(&ev, fileno(stdin), EVFILT_READ, EV_ADD, 0, 0, 0);
+	EV_SET(&ev, fileno(stdin), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -57,12 +57,9 @@ int main(int argc, char * const argv[]) {
 	struct timespec last;
 	clock_gettime(CLOCK_MONOTONIC, &last);
 
-	int nev;
 	struct kevent triggered;
-	while ((nev = kevent(kq, &triggered, 1, &ev, 1, &timeout))) {
-		if (nev == -1) {
-			err(EX_IOERR, "kevent");
-		}
+	struct timespec now;
+	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* There is only one event at a time */
 		if (nev) {
