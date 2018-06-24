@@ -2,15 +2,18 @@
 #include <err.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/event.h>
+#include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sysexits.h>
 #include <time.h>
 
 #define NSEC_PER_SEC (1000000000L)
-#define columns (80 - 15) /* TODO: use screen width */
+#define TS_WIDTH     (8 + 1 + 3) /* sec + '.' + nsec */
+#define SEP_WIDTH    (3) /* " ] " */
 
 static struct timespec timespec_subtract(const struct timespec *minuend,
 		const struct timespec *subtrahend) {
@@ -56,9 +59,16 @@ int main(int argc, char * const argv[]) {
 		err(EX_OSERR, "kqueue");
 	}
 
+	/* Timestamp the process start */
 	struct timespec last;
 	clock_gettime(CLOCK_MONOTONIC, &last);
 	const struct timespec start = last;
+
+	/* Set up terminal width info */
+	struct winsize w;
+	ioctl(fileno(stdout), TIOCGWINSZ, &w);
+	int bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
+	char *buf = malloc(bufsize);
 
 	struct kevent triggered;
 	struct timespec now;
@@ -75,8 +85,7 @@ int main(int argc, char * const argv[]) {
 			const struct timespec diff = timespec_subtract(&now, &last);
 
 			bool wrap = false;
-			char buf[columns];
-			while (fgets(buf, columns, stdin)) {
+			while (fgets(buf, bufsize, stdin)) {
 				/*
 				 * 8 digits on the left-hand-side will allow for a process spanning
 				 * ~3.17 years of runtime to not have problems with running out of
@@ -86,7 +95,7 @@ int main(int argc, char * const argv[]) {
 					printf("%8ld.%03ld", diff.tv_sec, diff.tv_sec);
 				}
 				else {
-					printf("%*s", 8 + 1 + 3, "");
+					printf("%*s", TS_WIDTH, "");
 				}
 
 				printf(" ] %s", buf);
@@ -110,6 +119,7 @@ int main(int argc, char * const argv[]) {
 			last = now;
 		}
 	}
+	free(buf);
 
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	const struct timespec diff = timespec_subtract(&now, &start);
