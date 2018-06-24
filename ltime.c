@@ -87,6 +87,25 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 	return result;
 }
 
+static size_t readln(char *buffer, size_t len, FILE *input, bool *newline) {
+	*newline = false;
+
+	size_t i;
+	for (i = 0; i < len - 1; i++) {
+		int c = fgetc(input);
+		if (c == '\n') {
+			*newline = true;
+			i--;
+			break;
+		}
+		buffer[i] = (char)c;
+	}
+
+	buffer[i+1] = '\0';
+
+	return i;
+}
+
 int main(int argc, char * const argv[]) {
 	(void)argc;
 	(void)argv;
@@ -127,7 +146,8 @@ int main(int argc, char * const argv[]) {
 			const struct timespec diff = timespec_subtract(&now, &last);
 
 			bool wrap = false;
-			for (ssize_t got = 0; got < triggered.data; got += getline(&buf, &bufsize, stdin)) {
+			bool nl;
+			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
 				/*
 				 * 8 digits on the left-hand-side will allow for a process spanning
 				 * ~3.17 years of runtime to not have problems with running out of
@@ -148,13 +168,13 @@ int main(int argc, char * const argv[]) {
 				 * fflushed without a newline -- then get the next chunk
 				 * prepared to be a wrap.
 				 */
-				if(!strchr(buf, '\n')) {
-					printf("\n");
+				if(!nl) {
 					wrap = true;
 				}
 				else {
 					wrap = false;
 				}
+				printf("\n");
 			}
 
 			/* Update the last timestamp to diff against */
