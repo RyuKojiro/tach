@@ -39,7 +39,7 @@
 #define SEP_WIDTH    (3) /* " ] " */
 
 static char *buf;
-static int bufsize;
+static size_t bufsize;
 
 static void winch(int sig) {
 	assert(sig == SIGWINCH);
@@ -50,7 +50,8 @@ static void winch(int sig) {
 
 	/* Update buffer */
 	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
-	buf = realloc(buf, (size_t)bufsize);
+	buf = realloc(buf, bufsize);
+	buf = memset(buf, 0, bufsize);
 }
 
 static struct timespec timespec_subtract(const struct timespec *minuend,
@@ -107,7 +108,6 @@ int main(int argc, char * const argv[]) {
 	signal(SIGWINCH, winch);
 
 	struct kevent triggered;
-	struct timespec now;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* There is only one event at a time */
@@ -117,18 +117,19 @@ int main(int argc, char * const argv[]) {
 			}
 
 			/* Get the timestamp of this output, and calculate the offset */
+			struct timespec now;
 			clock_gettime(CLOCK_MONOTONIC, &now);
 			const struct timespec diff = timespec_subtract(&now, &last);
 
 			bool wrap = false;
-			while (fgets(buf, bufsize, stdin)) {
+			for (ssize_t got = 0; got < triggered.data; got += getline(&buf, &bufsize, stdin)) {
 				/*
 				 * 8 digits on the left-hand-side will allow for a process spanning
 				 * ~3.17 years of runtime to not have problems with running out of
 				 * timestamp columns.
 				 */
 				if(!wrap) {
-					printf("%8ld.%03ld", diff.tv_sec, diff.tv_sec);
+					printf("%8ld.%03ld", diff.tv_sec, diff.tv_nsec);
 				}
 				else {
 					printf("%*s", TS_WIDTH, "");
@@ -157,8 +158,9 @@ int main(int argc, char * const argv[]) {
 	}
 	free(buf);
 
+	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("Total: %8ld.%03ld\n", diff.tv_sec, diff.tv_sec);
+	printf("Total: %8ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
 	return EX_OK;
 }
