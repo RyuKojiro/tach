@@ -145,41 +145,38 @@ int main(int argc, char * const argv[]) {
 			clock_gettime(CLOCK_MONOTONIC, &now);
 			const struct timespec diff = timespec_subtract(&now, &last);
 
-			bool wrap = false;
-			bool nl;
+			bool nl = false;
 			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
-				/*
-				 * 8 digits on the left-hand-side will allow for a process spanning
-				 * ~3.17 years of runtime to not have problems with running out of
-				 * timestamp columns.
-				 */
-				if(!wrap) {
+				if(nl) {
+					/*
+					 * 8 digits on the left-hand-side will allow for a process
+					 * spanning ~3.17 years of runtime to not have problems
+					 * with running out of timestamp columns.
+					 */
 					printf("%8ld.%03ld", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 				}
 				else {
+					/*
+					 * If there isn't a newline in this chunk -- perhaps there is
+					 * more than one screen-width's worth of data, or stdout was
+					 * fflushed without a newline -- then get the next chunk
+					 * prepared to be a wrap.
+					 */
 					printf("%*s", TS_WIDTH, "");
 				}
 
-				printf(" " COLOR_SEP " " COLOR_RESET " %s", buf);
-
-				/*
-				 * If there isn't a newline in this chunk -- perhaps there is
-				 * more than one screen-width's worth of data, or stdout was
-				 * fflushed without a newline -- then get the next chunk
-				 * prepared to be a wrap.
-				 */
-				if(!nl) {
-					wrap = true;
-				}
-				else {
-					wrap = false;
-				}
-				printf("\n");
+				printf(" " COLOR_SEP " " COLOR_RESET " %s\n", buf);
 			}
 
 			/* Update the last timestamp to diff against */
 			last = now;
 		}
+
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		const struct timespec diff = timespec_subtract(&now, &last);
+		printf("%8ld.%03ld " COLOR_SEP " " COLOR_RESET " \r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
+		fflush(stdout);
 	}
 	free(buf);
 

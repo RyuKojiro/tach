@@ -12,4 +12,6 @@ while True:
     if x % 5 == 0:
         print "this is a very long line" * 20
     sys.stdout.flush()
+    if x % 15 == 0:
+        sleep(3)
     sleep(abs(sin(x / 4.0) / 4.0))
