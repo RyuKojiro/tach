@@ -8,34 +8,32 @@
 #include <sysexits.h>
 #include <time.h>
 
+#define NSEC_PER_SEC (1000000000L)
+
 static struct timespec timespec_subtract(const struct timespec *minuend,
 		const struct timespec *subtrahend) {
-	struct timespec result;
-
 	/*
 	 * minuend - subtrahend = result
 	 *
-	 * The minuend must be larger than the subtrahend. If they aren't, assert.
+	 * The minuend must be larger than the subtrahend.
 	 */
 	assert(minuend->tv_sec >= subtrahend->tv_sec);
 	if (minuend->tv_sec == subtrahend->tv_sec) {
 		assert(minuend->tv_nsec >= subtrahend->tv_nsec);
 	}
 
-	result.tv_sec = minuend->tv_sec - subtrahend->tv_sec;
+	/*
+	 * Borrow from the seconds place.
+	 *
+	 * tv_nsec is a long, and so should be capable of holding a spare
+	 * second (in nanoseconds) on all platforms.
+	 */
+	const int borrow = minuend->tv_nsec < subtrahend->tv_nsec;
 
-	if (minuend->tv_nsec < subtrahend->tv_nsec) {
-		/*
-		 * Borrow from the seconds place.
-		 *
-		 * tv_nsec is a long, and so should be capable of holding a spare
-		 * second (in nanoseconds) on all platforms
-		 */
-		result.tv_sec--;
-		result.tv_nsec += 1000000000L;
-	}
-
-	result.tv_nsec = minuend->tv_nsec - subtrahend->tv_nsec;
+	struct timespec result = {
+		.tv_sec = minuend->tv_sec - borrow - subtrahend->tv_sec,
+		.tv_nsec = minuend->tv_nsec + (borrow * NSEC_PER_SEC) - subtrahend->tv_nsec,
+	};
 
 	return result;
 }
