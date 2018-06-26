@@ -135,6 +135,8 @@ int main(int argc, char * const argv[]) {
 	signal(SIGWINCH, winch);
 
 	struct kevent triggered;
+	bool wrap = false;
+	bool nl = false;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
@@ -148,33 +150,30 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
-			bool nl = false;
 			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
-				if(nl) {
-					/*
-					 * 8 digits on the left-hand-side will allow for a process
-					 * spanning ~3.17 years of runtime to not have problems
-					 * with running out of timestamp columns.
-					 */
-					printf(FMT_TS, diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
-				}
-				else {
+				if (wrap) {
 					/*
 					 * If there isn't a newline in this chunk -- perhaps there is
 					 * more than one screen-width's worth of data, or stdout was
 					 * fflushed without a newline -- then get the next chunk
 					 * prepared to be a wrap.
 					 */
-					printf("%*s", TS_WIDTH, "");
+					printf("%*s" " \x1b[30;41m " COLOR_RESET " ", TS_WIDTH, ""); // red
 				}
 
-				printf(FMT_SEP "%s\n", buf);
+				printf("\n" FMT_TS " \x1b[30;43m " COLOR_RESET " " "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf); // yellow
+				wrap = !nl;
 			}
 
 			/* Update the last timestamp to diff against */
 			last = now;
 		}
 
+		/*
+		 * 8 digits on the left-hand-side will allow for a process
+		 * spanning ~3.17 years of runtime to not have problems
+		 * with running out of timestamp columns.
+		 */
 		printf(FMT_TS FMT_SEP "\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
 		fflush(stdout);
 	}
