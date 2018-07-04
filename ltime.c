@@ -84,7 +84,7 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 	 */
 	const int borrow = minuend->tv_nsec < subtrahend->tv_nsec;
 
-	struct timespec result = {
+	const struct timespec result = {
 		.tv_sec = minuend->tv_sec - borrow - subtrahend->tv_sec,
 		.tv_nsec = minuend->tv_nsec + (borrow * NSEC_PER_SEC) - subtrahend->tv_nsec,
 	};
