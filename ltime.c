@@ -46,6 +46,7 @@
 
 #define FMT_TS        "%8ld.%03ld"
 #define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
+#define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
 static char *buf;
 static size_t bufsize;
@@ -158,7 +159,7 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 
-				printf("\n" FMT_TS FMT_SEP "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf);
+				printf("\n" FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
 				fflush(stdout);
 				wrap = !nl;
 
@@ -172,7 +173,7 @@ int main(int argc, char * const argv[]) {
 		 * spanning ~3.17 years of runtime to not have problems
 		 * with running out of timestamp columns.
 		 */
-		printf(FMT_TS FMT_SEP "\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
+		printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
 		fflush(stdout);
 	}
 	free(buf);
