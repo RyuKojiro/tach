@@ -177,6 +177,6 @@ int main(int argc, char * const argv[]) {
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("Total: %8ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
+	printf("\nTotal: %ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
 	return EX_OK;
 }
