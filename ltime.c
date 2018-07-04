@@ -156,13 +156,12 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 
-				/* Update the last timestamp to diff against */
-				last = now;
-				const struct timespec diff = timespec_subtract(&now, &last);
-
 				printf("\n" FMT_TS FMT_SEP "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf);
 				fflush(stdout);
 				wrap = !nl;
+
+				/* Update the last timestamp to diff against */
+				last = now;
 			}
 		}
 
