@@ -43,6 +43,9 @@
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
 
+#define FMT_TS        "%8ld.%03ld"
+#define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
+
 static char *buf;
 static size_t bufsize;
 
@@ -54,7 +57,7 @@ static void winch(int sig) {
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
-	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
+	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH;
 	buf = realloc(buf, bufsize);
 	buf = memset(buf, 0, bufsize);
 }
@@ -90,20 +93,12 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 static size_t readln(char *buffer, size_t len, FILE *input, bool *newline) {
 	*newline = false;
 
-	size_t i;
-	for (i = 0; i < len - 1; i++) {
-		int c = fgetc(input);
-		if (c == '\n') {
-			*newline = true;
-			i--;
-			break;
-		}
-		buffer[i] = (char)c;
+	ssize_t cur = read(fileno(input), buf, bufsize);
+	if (buf[cur-1] == '\n') {
+		buf[cur-1] = '\0';
+		*newline = true;
 	}
-
-	buffer[i+1] = '\0';
-
-	return i;
+	return (size_t)cur;
 }
 
 int main(int argc, char * const argv[]) {
@@ -132,7 +127,14 @@ int main(int argc, char * const argv[]) {
 	signal(SIGWINCH, winch);
 
 	struct kevent triggered;
+	bool wrap = false;
+	bool nl = true;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
+
+		/* Get the timestamp of this output, and calculate the offset */
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		const struct timespec diff = timespec_subtract(&now, &last);
 
 		/* There is only one event at a time */
 		if (nev) {
@@ -140,46 +142,34 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
-			/* Get the timestamp of this output, and calculate the offset */
-			struct timespec now;
-			clock_gettime(CLOCK_MONOTONIC, &now);
-			const struct timespec diff = timespec_subtract(&now, &last);
-
-			bool wrap = false;
-			bool nl;
 			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
-				/*
-				 * 8 digits on the left-hand-side will allow for a process spanning
-				 * ~3.17 years of runtime to not have problems with running out of
-				 * timestamp columns.
-				 */
-				if(!wrap) {
-					printf("%8ld.%03ld", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
-				}
-				else {
-					printf("%*s", TS_WIDTH, "");
+				if (wrap) {
+					/*
+					 * If there isn't a newline in this chunk -- perhaps there is
+					 * more than one screen-width's worth of data, or stdout was
+					 * fflushed without a newline -- then get the next chunk
+					 * prepared to be a wrap.
+					 */
+					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 
-				printf(" " COLOR_SEP " " COLOR_RESET " %s", buf);
+				/* Update the last timestamp to diff against */
+				last = now;
+				const struct timespec diff = timespec_subtract(&now, &last);
 
-				/*
-				 * If there isn't a newline in this chunk -- perhaps there is
-				 * more than one screen-width's worth of data, or stdout was
-				 * fflushed without a newline -- then get the next chunk
-				 * prepared to be a wrap.
-				 */
-				if(!nl) {
-					wrap = true;
-				}
-				else {
-					wrap = false;
-				}
-				printf("\n");
+				printf("\n" FMT_TS FMT_SEP "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf);
+				fflush(stdout);
+				wrap = !nl;
 			}
-
-			/* Update the last timestamp to diff against */
-			last = now;
 		}
+
+		/*
+		 * 8 digits on the left-hand-side will allow for a process
+		 * spanning ~3.17 years of runtime to not have problems
+		 * with running out of timestamp columns.
+		 */
+		printf(FMT_TS FMT_SEP "\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC));
+		fflush(stdout);
 	}
 	free(buf);
 
