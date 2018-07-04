@@ -93,20 +93,12 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 static size_t readln(char *buffer, size_t len, FILE *input, bool *newline) {
 	*newline = false;
 
-	size_t i;
-	for (i = 0; i < len - 1; i++) {
-		int c = fgetc(input);
-		if (c == '\n') {
-			*newline = true;
-			i--;
-			break;
-		}
-		buffer[i] = (char)c;
+	ssize_t cur = read(fileno(input), buf, bufsize);
+	if (buf[cur-1] == '\n') {
+		buf[cur-1] = '\0';
+		*newline = true;
 	}
-
-	buffer[i+1] = '\0';
-
-	return i;
+	return (size_t)cur;
 }
 
 int main(int argc, char * const argv[]) {
@@ -136,7 +128,7 @@ int main(int argc, char * const argv[]) {
 
 	struct kevent triggered;
 	bool wrap = false;
-	bool nl = false;
+	bool nl = true;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
@@ -161,12 +153,14 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" " \x1b[30;41m " COLOR_RESET " ", TS_WIDTH, ""); // red
 				}
 
+				/* Update the last timestamp to diff against */
+				last = now;
+				const struct timespec diff = timespec_subtract(&now, &last);
+
 				printf("\n" FMT_TS " \x1b[30;43m " COLOR_RESET " " "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf); // yellow
+				fflush(stdout);
 				wrap = !nl;
 			}
-
-			/* Update the last timestamp to diff against */
-			last = now;
 		}
 
 		/*
