@@ -57,7 +57,7 @@ static void winch(int sig) {
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
-	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH + 1;
+	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH;
 	buf = realloc(buf, bufsize);
 	buf = memset(buf, 0, bufsize);
 }
