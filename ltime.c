@@ -91,10 +91,10 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 	return result;
 }
 
-static size_t readln(char *buffer, size_t len, FILE *input, bool *newline) {
+static size_t readln(int fd, char *buffer, size_t len, bool *newline) {
 	*newline = false;
 
-	ssize_t cur = read(fileno(input), buf, bufsize);
+	ssize_t cur = read(fd, buf, bufsize);
 	if (buf[cur-1] == '\n') {
 		buf[cur-1] = '\0';
 		*newline = true;
@@ -110,8 +110,10 @@ int main(int argc, char * const argv[]) {
 		.tv_nsec = NSEC_PER_MSEC,
 	};
 
+	const int child_stdout = fileno(stdin);
+
 	struct kevent ev;
-	EV_SET(&ev, fileno(stdin), EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	EV_SET(&ev, child_stdout, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -143,7 +145,7 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
-			for (size_t got = 0; got < (size_t)triggered.data; got += readln(buf, bufsize, stdin, &nl)) {
+			for (size_t got = 0; got < (size_t)triggered.data; got += readln(child_stdout, buf, bufsize, &nl)) {
 				if (wrap) {
 					/*
 					 * If there isn't a newline in this chunk -- perhaps there is
