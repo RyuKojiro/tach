@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sysexits.h>
 #include <time.h>
+#include <unistd.h>
 
 #define NSEC_PER_MSEC (1000000L)
 #define NSEC_PER_SEC  (1000000000L)
