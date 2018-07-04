@@ -130,12 +130,12 @@ int main(int argc, char * const argv[]) {
 	signal(SIGWINCH, winch);
 
 	struct kevent triggered;
+	struct timespec now;
 	bool wrap = false;
 	bool nl = true;
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
-		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
 
@@ -175,8 +175,6 @@ int main(int argc, char * const argv[]) {
 	}
 	free(buf);
 
-	struct timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
 	const struct timespec diff = timespec_subtract(&now, &start);
 	printf("\nTotal: %ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
 	return EX_OK;
