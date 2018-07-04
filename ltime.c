@@ -106,11 +106,13 @@ int main(int argc, char * const argv[]) {
 	(void)argc;
 	(void)argv;
 
+	/* Setup the pipes to the child process */
+	const int child_stdout = fileno(stdin);
+
+	/* Get everything ready for kqueue */
 	const struct timespec timeout = {
 		.tv_nsec = NSEC_PER_MSEC,
 	};
-
-	const int child_stdout = fileno(stdin);
 
 	struct kevent ev;
 	EV_SET(&ev, child_stdout, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
@@ -125,7 +127,7 @@ int main(int argc, char * const argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &last);
 	const struct timespec start = last;
 
-	/* Set up terminal width info */
+	/* Set up terminal width info tracking and buffer allocation */
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
