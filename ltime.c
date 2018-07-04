@@ -150,14 +150,14 @@ int main(int argc, char * const argv[]) {
 					 * fflushed without a newline -- then get the next chunk
 					 * prepared to be a wrap.
 					 */
-					printf("%*s" " \x1b[30;41m " COLOR_RESET " ", TS_WIDTH, ""); // red
+					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 
 				/* Update the last timestamp to diff against */
 				last = now;
 				const struct timespec diff = timespec_subtract(&now, &last);
 
-				printf("\n" FMT_TS " \x1b[30;43m " COLOR_RESET " " "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf); // yellow
+				printf("\n" FMT_TS FMT_SEP "%s\r", diff.tv_sec, (diff.tv_nsec / NSEC_PER_MSEC), buf);
 				fflush(stdout);
 				wrap = !nl;
 			}
