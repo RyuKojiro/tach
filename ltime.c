@@ -59,6 +59,7 @@ enum {
 	PIPE_IN,
 };
 
+/* Dynamic line buffer */
 static char *buf;
 static size_t bufsize;
 
@@ -76,7 +77,7 @@ static void winch(int sig) {
 }
 
 static struct timespec timespec_subtract(const struct timespec *minuend,
-		const struct timespec *subtrahend) {
+                                         const struct timespec *subtrahend) {
 	/*
 	 * minuend - subtrahend = result
 	 *
@@ -213,6 +214,7 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 
+				/* Advance the line */
 				printf("\n" FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
 				fflush(stdout);
 				wrap = !nl;
@@ -231,8 +233,9 @@ int main(int argc, char * const argv[]) {
 		fflush(stdout);
 	}
 	free(buf);
+	printf("\n");
 
 	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("\nTotal: %ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
+	printf("Total: %ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
 	return EX_OK;
 }
