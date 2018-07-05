@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <err.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -47,6 +48,16 @@
 #define FMT_TS        "%8ld.%03ld"
 #define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
+
+/*
+ * pipe(2) creates a descriptor pair where the 0 index is the output, and the 1
+ * index is the input. Rather than hardcode these indexes everywhere, let's use
+ * named indexes.
+ */
+enum {
+	PIPE_OUT,
+	PIPE_IN,
+};
 
 static char *buf;
 static size_t bufsize;
@@ -103,12 +114,55 @@ static size_t readln(int fd, char *buffer, size_t len, bool *newline) {
 	return (size_t)cur;
 }
 
+static void become(int fds[], int target) {
+	while ((dup2(fds[PIPE_IN], target) == -1) && (errno == EINTR));
+	close(fds[PIPE_OUT]);
+	close(fds[PIPE_IN]);
+}
+
 int main(int argc, char * const argv[]) {
 	(void)argc;
 	(void)argv;
 
-	/* Setup the pipes to the child process */
-	const int child_stdout = fileno(stdin);
+	/* Setup stdout and stderr pipes */
+	int stdout_pair[2];
+	if(pipe(stdout_pair) == -1) {
+		err(EX_OSERR , "pipe");
+	}
+
+	int stderr_pair[2];
+	if(pipe(stderr_pair) == -1) {
+		err(EX_OSERR , "pipe");
+	}
+
+	/*
+	 *  Fork and connect the pipes to the child process
+	 *
+	 *      <- Flow direction <-
+	 *   PIPE_OUT  (pipe)  PIPE_IN
+	 * Parent [==============] Child
+	 *  child_stdout        stdout
+	 *  child_stderr        stderr
+	 */
+	switch (fork()) {
+		case -1: { /* error */
+			err(EX_OSERR, "fork");
+		} break;
+		case 0: { /* child */
+			become(stdout_pair, STDOUT_FILENO);
+			become(stderr_pair, STDERR_FILENO);
+
+			execvp(argv[1], argv + 1);
+			err(EX_OSERR, "execv");
+		} break;
+		default: { /* parent */
+		}
+	}
+	const int child_stdout = stdout_pair[PIPE_OUT];
+	const int child_stderr = stderr_pair[PIPE_OUT];
+
+	close(stdout_pair[PIPE_IN]);
+	close(stderr_pair[PIPE_IN]);
 
 	/* Get everything ready for kqueue */
 	const struct timespec timeout = {
