@@ -173,8 +173,6 @@ int main(int argc, char * const argv[]) {
 			execvp(argv[1], argv + 1);
 			err(EX_OSERR, "execv");
 		} break;
-		default: { /* parent */
-		}
 	}
 	const int child_stdout = stdout_pair[PIPE_OUT];
 	const int child_stderr = stderr_pair[PIPE_OUT];
