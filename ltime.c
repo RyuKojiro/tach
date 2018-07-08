@@ -63,6 +63,15 @@ enum {
 static char *buf;
 static size_t bufsize;
 
+/* Signal handling */
+static volatile int interrupted;
+
+static void interrupt(int sig) {
+	assert(sig == SIGINT);
+
+	interrupted++;
+}
+
 static void winch(int sig) {
 	assert(sig == SIGWINCH);
 
@@ -124,6 +133,9 @@ static void become(int fds[], int target) {
 int main(int argc, char * const argv[]) {
 	(void)argc;
 	(void)argv;
+
+	/* Catch SIGINT to make sure we get a chance to print final stats */
+	signal(SIGINT, interrupt);
 
 	/* Setup stdout and stderr pipes */
 	int stdout_pair[2];
@@ -231,6 +243,11 @@ int main(int argc, char * const argv[]) {
 		 */
 		printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
 		fflush(stdout);
+
+		/* Check to see if we got a SIGINT */
+		if (interrupted) {
+			break;
+		}
 	}
 	free(buf);
 	printf("\n");
