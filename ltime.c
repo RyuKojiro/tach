@@ -85,6 +85,13 @@ static void winch(int sig) {
 	buf = memset(buf, 0, bufsize);
 }
 
+/* Returns true if a > b, otherwise false. */
+static bool timespec_compare(const struct timespec *a,
+                            const struct timespec *b) {
+	return (a->tv_sec > b->tv_sec) ||
+		(a->tv_sec == b->tv_sec && a->tv_nsec > b->tv_nsec);
+}
+
 static struct timespec timespec_subtract(const struct timespec *minuend,
                                          const struct timespec *subtrahend) {
 	/*
@@ -92,10 +99,7 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 	 *
 	 * The minuend must be larger than the subtrahend.
 	 */
-	assert(minuend->tv_sec >= subtrahend->tv_sec);
-	if (minuend->tv_sec == subtrahend->tv_sec) {
-		assert(minuend->tv_nsec >= subtrahend->tv_nsec);
-	}
+	assert(timespec_compare(minuend, subtrahend));
 
 	/*
 	 * Borrow from the seconds place.
