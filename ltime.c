@@ -36,6 +36,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#define NSEC_PER_USEC (1000L)
 #define NSEC_PER_MSEC (1000000L)
 #define NSEC_PER_SEC  (1000000000L)
 
@@ -203,10 +204,10 @@ int main(int argc, char * const argv[]) {
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
-	struct kevent triggered;
-	struct timespec now;
 	bool wrap = false;
 	bool nl = true;
+	struct kevent triggered;
+	struct timespec now, max = {0};
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
@@ -235,6 +236,11 @@ int main(int argc, char * const argv[]) {
 				fflush(stdout);
 				wrap = !nl;
 
+				/* Update running statistics */
+				if (timespec_compare(&diff, &max) > 0) {
+					max = diff;
+				}
+
 				/* Update the last timestamp to diff against */
 				last = now;
 			}
@@ -257,6 +263,7 @@ int main(int argc, char * const argv[]) {
 	printf("\n");
 
 	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("Total: %ld.%03ld\n", diff.tv_sec, diff.tv_nsec);
+	printf("Total: %6lu.%06lu\n", diff.tv_sec, diff.tv_nsec / NSEC_PER_USEC);
+	printf("Max:   %6lu.%06lu\n", max.tv_sec, max.tv_nsec / NSEC_PER_USEC);
 	return EX_OK;
 }
