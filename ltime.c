@@ -205,7 +205,7 @@ int main(int argc, char * const argv[]) {
 	bool wrap = false;
 	bool nl = true;
 	struct kevent triggered;
-	struct timespec now, max = {0};
+	struct timespec now, max = {0,0};
 	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
