@@ -148,12 +148,10 @@ int main(int argc, char * const argv[]) {
 
 	/* Setup stdout and stderr pipes */
 	int stdout_pair[2];
-	if(pipe(stdout_pair) == -1) {
-		err(EX_OSERR , "pipe");
-	}
-
 	int stderr_pair[2];
-	if(pipe(stderr_pair) == -1) {
+
+	if(pipe(stdout_pair) == -1 ||
+	   pipe(stderr_pair) == -1) {
 		err(EX_OSERR , "pipe");
 	}
 
