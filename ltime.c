@@ -233,7 +233,6 @@ int main(int argc, char * const argv[]) {
 
 				/* Advance the line */
 				printf("\n" FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
-				fflush(stdout);
 				wrap = !nl;
 
 				/* Update running statistics */
@@ -244,14 +243,14 @@ int main(int argc, char * const argv[]) {
 				/* Update the last timestamp to diff against */
 				last = now;
 			}
+		} else {
+			/*
+			 * 8 digits on the left-hand-side will allow for a process
+			 * spanning ~3.17 years of runtime to not have problems
+			 * with running out of timestamp columns.
+			 */
+			printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
 		}
-
-		/*
-		 * 8 digits on the left-hand-side will allow for a process
-		 * spanning ~3.17 years of runtime to not have problems
-		 * with running out of timestamp columns.
-		 */
-		printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
 		fflush(stdout);
 
 		/* Check to see if we got a SIGINT */
