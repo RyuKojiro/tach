@@ -23,6 +23,7 @@
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -81,7 +82,7 @@ static void winch(int sig) {
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
-	bufsize = w.ws_col - TS_WIDTH - SEP_WIDTH;
+	bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
 	buf = realloc(buf, bufsize);
 	buf = memset(buf, 0, bufsize);
 }
