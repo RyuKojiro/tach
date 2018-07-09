@@ -118,6 +118,10 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
 	return result;
 }
 
+/*
+ * Like getline(3), but rather than including the newline it simply
+ * indicates the presence of the newline.
+ */
 static size_t readln(int fd, char *buf, size_t len, bool *newline) {
 	*newline = false;
 
