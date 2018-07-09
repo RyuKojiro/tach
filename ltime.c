@@ -208,6 +208,7 @@ int main(int argc, char * const argv[]) {
 
 	bool wrap = false;
 	bool nl = true;
+	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 1, &triggered, 1, &timeout)) {
@@ -237,7 +238,10 @@ int main(int argc, char * const argv[]) {
 				}
 
 				/* Advance the line */
-				printf("\n" FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
+				if (!first) {
+					printf("\n");
+				}
+				printf(FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
 				wrap = !nl;
 
 				/* Update running statistics */
@@ -247,8 +251,9 @@ int main(int argc, char * const argv[]) {
 
 				/* Update the last timestamp to diff against */
 				last = now;
+				first = false;
 			} while (got < (size_t)triggered.data);
-		} else {
+		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
 			 * spanning ~3.17 years of runtime to not have problems
