@@ -188,8 +188,9 @@ int main(int argc, char * const argv[]) {
 		.tv_nsec = NSEC_PER_MSEC,
 	};
 
-	struct kevent ev;
-	EV_SET(&ev, child_stdout, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	struct kevent ev[2];
+	EV_SET(ev + 0, child_stdout, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	EV_SET(ev + 1, child_stderr, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -209,7 +210,7 @@ int main(int argc, char * const argv[]) {
 	bool nl = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
-	for (int nev = 0; nev != -1; nev = kevent(kq, &ev, 1, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 1, &triggered, 1, &timeout)) {
 
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
