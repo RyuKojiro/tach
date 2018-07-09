@@ -221,7 +221,10 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
-			for (size_t got = 0; got < (size_t)triggered.data; got += readln(child_stdout, buf, bufsize, &nl)) {
+			size_t got = 0;
+			do {
+				got += readln(child_stdout, buf, bufsize, &nl);
+
 				if (wrap) {
 					/*
 					 * If there isn't a newline in this chunk -- perhaps there is
@@ -243,7 +246,7 @@ int main(int argc, char * const argv[]) {
 
 				/* Update the last timestamp to diff against */
 				last = now;
-			}
+			} while (got < (size_t)triggered.data);
 		} else {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
