@@ -124,12 +124,27 @@ static struct timespec timespec_subtract(const struct timespec *minuend,
  * indicates the presence of the newline.
  */
 static size_t readln(int fd, char *buf, size_t len, bool *newline) {
+	static char *leftovers;
 	*newline = false;
 
-	ssize_t cur = read(fd, buf, len);
-	if (buf[cur-1] == '\n') {
-		buf[cur-1] = '\0';
+	ssize_t cur;
+	if (leftovers) {
+		cur = (ssize_t)strlen(leftovers);
+		strncpy(buf, leftovers, cur);
+		free(leftovers);
+		leftovers = NULL;
+	} else {
+		cur = read(fd, buf, len);
+	}
+
+	char *nl = strchr(buf, '\n');
+	if (nl) {
+		*nl = '\0';
 		*newline = true;
+		if (nl - buf != cur - 1) {
+			leftovers = strdup(nl+1);
+			cur = nl - buf;
+		}
 	}
 	return (size_t)cur;
 }
@@ -223,36 +238,39 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
+			if (!first) {
+				/* Advance the line */
+				printf("\n");
+			}
+
 			size_t got = 0;
 			do {
-				got += readln(child_stdout, buf, bufsize, &nl);
+				got += readln(child_stdout, buf + got, bufsize - got, &nl);
 
 				if (wrap) {
 					/*
 					 * If there isn't a newline in this chunk -- perhaps there
-					 * is * more than one screen-width's worth of data, or
+					 * is more than one screen-width's worth of data, or
 					 * stdout was fflushed without a newline -- then get the
 					 * next chunk prepared to be a wrap.
 					 */
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
+				} else {
+					printf(FMT_TS FMT_SEP, ARG_TS(diff));
 				}
+				printf("%s\r", buf);
 
-				/* Advance the line */
-				if (!first) {
-					printf("\n");
-				}
-				printf(FMT_TS FMT_SEP "%s\r", ARG_TS(diff), buf);
 				wrap = !nl;
+			} while (!nl && got < bufsize);
 
-				/* Update running statistics */
-				if (timespec_compare(&diff, &max) > 0) {
-					max = diff;
-				}
+			/* Update running statistics */
+			if (timespec_compare(&diff, &max) > 0) {
+				max = diff;
+			}
 
-				/* Update the last timestamp to diff against */
-				last = now;
-				first = false;
-			} while (got < (size_t)triggered.data);
+			/* Update the last timestamp to diff against */
+			last = now;
+			first = false;
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
