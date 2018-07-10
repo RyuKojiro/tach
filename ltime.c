@@ -89,7 +89,7 @@ static void winch(int sig) {
 
 /* Returns true if a > b, otherwise false. */
 static bool timespec_compare(const struct timespec *a,
-                            const struct timespec *b) {
+                             const struct timespec *b) {
 	return (a->tv_sec > b->tv_sec) ||
 		(a->tv_sec == b->tv_sec && a->tv_nsec > b->tv_nsec);
 }
