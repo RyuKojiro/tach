@@ -139,11 +139,19 @@ static size_t readln(int fd, char *buf, size_t len, bool *newline) {
 
 	char *nl = strchr(buf, '\n');
 	if (nl) {
+		/*
+		 * If there is a newline and it's at the tail end, chop it off.
+		 * If it's not the tail end, then split the buffer, hold onto the
+		 * latter half, and return the first half.
+		 */
 		*nl = '\0';
 		*newline = true;
+
 		if (nl - buf != cur - 1) {
 			leftovers = strdup(nl+1);
 			cur = nl - buf;
+		} else {
+			cur--;
 		}
 	}
 	return (size_t)cur;
