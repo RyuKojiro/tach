@@ -229,10 +229,10 @@ int main(int argc, char * const argv[]) {
 
 				if (wrap) {
 					/*
-					 * If there isn't a newline in this chunk -- perhaps there is
-					 * more than one screen-width's worth of data, or stdout was
-					 * fflushed without a newline -- then get the next chunk
-					 * prepared to be a wrap.
+					 * If there isn't a newline in this chunk -- perhaps there
+					 * is * more than one screen-width's worth of data, or
+					 * stdout was fflushed without a newline -- then get the
+					 * next chunk prepared to be a wrap.
 					 */
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
