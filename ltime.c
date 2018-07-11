@@ -36,6 +36,7 @@
 #include <sysexits.h>
 #include <time.h>
 #include <unistd.h>
+#include <util.h>
 
 #define NSEC_PER_USEC (1000L)
 #define NSEC_PER_MSEC (1000000L)
@@ -174,7 +175,7 @@ int main(int argc, char * const argv[]) {
 	int stdout_pair[2];
 	int stderr_pair[2];
 
-	if(pipe(stdout_pair) == -1 ||
+	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL) ||
 	   pipe(stderr_pair) == -1) {
 		err(EX_OSERR , "pipe");
 	}
