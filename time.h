@@ -21,8 +21,6 @@
  */
 
 #include <stdbool.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <time.h>
 
 #define NSEC_PER_USEC (1000L)
