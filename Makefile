@@ -1,6 +1,6 @@
 PROGNAME=ltime
 CFLAGS=-Wall -ggdb -std=c99
-SRCS=ltime.c
+SRCS=main.c time.c
 OBJS=$(SRCS:.c=.o)
 
 $(PROGNAME): $(OBJS)

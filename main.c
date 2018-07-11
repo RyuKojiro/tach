@@ -31,16 +31,11 @@
 #include <string.h>
 #include <sys/event.h>
 #include <sys/ioctl.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <sysexits.h>
-#include <time.h>
 #include <unistd.h>
 #include <util.h>
 
-#define NSEC_PER_USEC (1000L)
-#define NSEC_PER_MSEC (1000000L)
-#define NSEC_PER_SEC  (1000000000L)
+#include "time.h"
 
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
 #define SEP_WIDTH     (3) /* " | " */
@@ -86,38 +81,6 @@ static void winch(int sig) {
 	bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
 	buf = realloc(buf, bufsize);
 	buf = memset(buf, 0, bufsize);
-}
-
-/* Returns true if a > b, otherwise false. */
-static bool timespec_compare(const struct timespec *a,
-                             const struct timespec *b) {
-	return (a->tv_sec > b->tv_sec) ||
-		(a->tv_sec == b->tv_sec && a->tv_nsec > b->tv_nsec);
-}
-
-static struct timespec timespec_subtract(const struct timespec *minuend,
-                                         const struct timespec *subtrahend) {
-	/*
-	 * minuend - subtrahend = result
-	 *
-	 * The minuend must be larger than the subtrahend.
-	 */
-	assert(timespec_compare(minuend, subtrahend));
-
-	/*
-	 * Borrow from the seconds place.
-	 *
-	 * tv_nsec is a long, and so should be capable of holding a spare
-	 * second (in nanoseconds) on all platforms.
-	 */
-	const int borrow = minuend->tv_nsec < subtrahend->tv_nsec;
-
-	const struct timespec result = {
-		.tv_sec = minuend->tv_sec - borrow - subtrahend->tv_sec,
-		.tv_nsec = minuend->tv_nsec + (borrow * NSEC_PER_SEC) - subtrahend->tv_nsec,
-	};
-
-	return result;
 }
 
 /*
