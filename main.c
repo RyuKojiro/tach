@@ -152,9 +152,9 @@ int main(int argc, char * const argv[]) {
 	 *  child_stdout        stdout
 	 *  child_stderr        stderr
 	 */
-	switch (fork()) {
+	switch (vfork()) {
 		case -1: { /* error */
-			err(EX_OSERR, "fork");
+			err(EX_OSERR, "vfork");
 		} break;
 		case 0: { /* child */
 			become(stdout_pair, STDOUT_FILENO);
