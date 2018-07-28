@@ -19,7 +19,12 @@
 		</style>
 	</head>
 	<body bgcolor=grey>
-		<h2>Incomplete Line Read</h2>
+		<h2>Rules</h2>
+		<ul>
+			<li>The cursor must always return to the beginning of the line after each rendering stage.</li>
+		</ul>
+		<h2>Rendering Stages</h2>
+		<h3>Incomplete Line Read</h3>
 		<table>
 			<tr>
 				<td>0</td>
@@ -34,7 +39,7 @@
 			<tr>
 				<td>2</td>
 				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;<span class="refresh">Lorem ipsum dolor sit amet.</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
-				<td>Draw what was read, and a CR</td>
+				<td>Draw what was read + CR</td>
 			</tr>
 			<tr>
 				<td>3</td>
@@ -42,5 +47,19 @@
 				<td>Draw timestamp</td>
 			</tr>
 		</table>
+		<h3>Idling</h3>
+		<table>
+			<tr>
+				<td>0</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.000&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Existing line</td>
+			</tr>
+			<tr>
+				<td>1</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.001&nbsp;<span class="term-rv">&nbsp;</span></span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Update timestamp + CR</td>
+			</tr>
+		</table>
+		<h3>Reading a Newline</h3>
 	</body>
 </html>
