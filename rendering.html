@@ -19,10 +19,17 @@
 		</style>
 	</head>
 	<body bgcolor=grey>
+		<h2>Goals</h2>
+		<ol>
+			<li>One timestamp per newline character, located to the left of the bottom-most physical line of the terminal that contains text from that virtual line</li>
+			<li>Empty margins denoting soft-wrapping.</li>
+			<li>Constantly updating timestamp while a line is the last line present</li>
+			<li>Timestamp indicates how long the line it is on took, <i>not</i> the following line.</li>
+		</ol>
 		<h2>Rules</h2>
-		<ul>
+		<ol>
 			<li>The cursor must always return to the beginning of the line after each rendering stage.</li>
-		</ul>
+		</ol>
 		<h2>Rendering Stages</h2>
 		<h3>Incomplete Line Read</h3>
 		<table>
