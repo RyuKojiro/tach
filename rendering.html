@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<style type="text/css">
+			.term {
+				font-family: monospace;
+				background-color: black;
+				color: white;
+			}
+			
+			.term-rv {
+				font-family: monospace;
+				background-color: white;
+				color: black;
+			}
+			
+			.refresh {
+				border:1px solid magenta;
+			}
+		</style>
+	</head>
+	<body bgcolor=grey>
+		<h2>Incomplete Line Read</h2>
+		<table>
+			<tr>
+				<td>0</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Initial empty line</td>
+			</tr>
+			<tr>
+				<td>1</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Draw empty left margin</td>
+			</tr>
+			<tr>
+				<td>2</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;<span class="refresh">Lorem ipsum dolor sit amet.</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Draw what was read, and a CR</td>
+			</tr>
+			<tr>
+				<td>3</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.000&nbsp;<span class="term-rv">&nbsp;</span></span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Draw timestamp</td>
+			</tr>
+		</table>
+	</body>
+</html>
