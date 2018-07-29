@@ -195,6 +195,7 @@ int main(int argc, char * const argv[]) {
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
+	size_t got = 0;
 	bool wrap = false;
 	bool nl = true;
 	bool first = true;
@@ -212,39 +213,29 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
-			if (!first) {
-				/* Advance the line */
-				printf("\n");
-			}
-
-			size_t got = 0;
-			do {
-				got += readln(child_stdout, buf + got, bufsize - got, &nl);
-
-				if (wrap) {
-					/*
-					 * If there isn't a newline in this chunk -- perhaps there
-					 * is more than one screen-width's worth of data, or
-					 * stdout was fflushed without a newline -- then get the
-					 * next chunk prepared to be a wrap.
-					 */
-					printf("%*s" FMT_SEP, TS_WIDTH, "");
-				} else {
+			if (nl || wrap) {
+				if (nl) {
 					printf(FMT_TS FMT_SEP, ARG_TS(diff));
+				} else if (wrap) {
+					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
-				printf("%s\r", buf);
+				printf("\n");
+				got = 0;
 
-				wrap = !nl;
-			} while (!nl && got < bufsize);
+				/* Update running statistics */
+				if (timespec_compare(&diff, &max) > 0) {
+					max = diff;
+				}
 
-			/* Update running statistics */
-			if (timespec_compare(&diff, &max) > 0) {
-				max = diff;
+				/* Update the last timestamp to diff against */
+				last = now;
+				first = false;
 			}
 
-			/* Update the last timestamp to diff against */
-			last = now;
-			first = false;
+			got += readln(child_stdout, buf + got, bufsize - got, &nl);
+			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", buf);
+
+			wrap = (got == bufsize);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
