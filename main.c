@@ -79,8 +79,8 @@ static void winch(int sig) {
 
 	/* Update buffer */
 	bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
-	buf = realloc(buf, bufsize);
-	buf = memset(buf, 0, bufsize);
+	buf = realloc(buf, bufsize + 1);
+	buf = memset(buf, 0, bufsize + 1);
 }
 
 /*
@@ -99,6 +99,7 @@ static size_t readln(int fd, char *buf, size_t len, bool *newline) {
 		leftovers = NULL;
 	} else {
 		cur = read(fd, buf, len);
+		buf[cur] = '\0';
 	}
 
 	char *nl = strchr(buf, '\n');
@@ -164,6 +165,7 @@ int main(int argc, char * const argv[]) {
 			err(EX_OSERR, "execv");
 		} break;
 	}
+
 	const int child_stdout = stdout_pair[PIPE_OUT];
 	const int child_stderr = stderr_pair[PIPE_OUT];
 
