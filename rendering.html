@@ -29,31 +29,68 @@
 		<h2>Rules</h2>
 		<ol>
 			<li>The cursor must always return to the beginning of the line after each rendering stage.</li>
+			<li>Any rendering stage may be preceded or followed by any number of any stage.</li>
 		</ol>
 		<h2>Rendering Stages</h2>
-		<h3>Incomplete Line Read</h3>
+		<h3>On readln()</h3>
+		<p>If the preceding read had a newline in it:</p>
 		<table>
 			<tr>
 				<td>0</td>
-				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
-				<td>Initial empty line</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.004</span>&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Update final timestamp</td>
 			</tr>
 			<tr>
 				<td>1</td>
-				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></td>
+				<td>NL</td>
+			</tr>
+		</table>
+		<p>Otherwise, if the preceding line was filled, but didn't have a newline (soft-wrap):</p>
+		<table>
+			<tr>
+				<td>0</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;Lorem ipsum dolor sit amet, consectetu</span></td>
+				<td>Draw left margin</td>
+			</tr>
+			<tr>
+				<td>1</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span></td>
+				<td>NL</td>
+			</tr>
+		</table>
+		<p>Unconditionally draw the margin and separator:</p>
+		<table>
+			<tr>
+				<td>2</td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
 				<td>Draw empty left margin</td>
 			</tr>
 			<tr>
-				<td>2</td>
-				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;<span class="refresh">Lorem ipsum dolor sit amet.</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
-				<td>Draw what was read + CR</td>
-			</tr>
-			<tr>
 				<td>3</td>
-				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.000&nbsp;<span class="term-rv">&nbsp;</span></span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
-				<td>Draw timestamp</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="refresh">&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Draw separator</td>
 			</tr>
 		</table>
+		<p>If we didn't have a newline or soft-wrap (there is stuff already on this line):</p>
+		<table>
+			<tr>
+				<td>4</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;<span class="refresh">Lorem ipsum dolor</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Redraw existing line buffer</td>
+			</tr>
+		</table>
+		<p>Unconditionally draw what was read (we are not allowed to read past the end of the line):</p>
+		<table>
+			<tr>
+				<td>5</td>
+				<td><span class="term">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;Lorem ipsum dolor<span class="refresh"> sit amet.</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td>Draw what was read + CR</td>
+			</tr>
+		</table>
+		<p>If the line contained a newline, store that flag for the next readln().</p>
+		<p>Otherwise, if the line was filled, flag that for the next readln().</p>
+
 		<h3>Idling</h3>
 		<table>
 			<tr>
@@ -63,10 +100,9 @@
 			</tr>
 			<tr>
 				<td>1</td>
-				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.001&nbsp;<span class="term-rv">&nbsp;</span></span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+				<td><span class="term"><span class="refresh">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0.001</span>&nbsp;<span class="term-rv">&nbsp;</span>&nbsp;Lorem ipsum dolor sit amet.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
 				<td>Update timestamp + CR</td>
 			</tr>
 		</table>
-		<h3>Reading a Newline</h3>
 	</body>
 </html>
