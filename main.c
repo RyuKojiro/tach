@@ -42,9 +42,11 @@
 
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
+#define COLOR_ERR     "\x1b[30;41m"
 
 #define FMT_TS        "%8ld.%03ld"
 #define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
+#define FMT_SEP_ERR   " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
 /*
