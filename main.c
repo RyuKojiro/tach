@@ -221,6 +221,7 @@ int main(int argc, char * const argv[]) {
 				}
 				printf("\n");
 				got = 0;
+				memset(buf, 0, bufsize + 1);
 
 				/* Update running statistics */
 				if (timespec_compare(&diff, &max) > 0) {
