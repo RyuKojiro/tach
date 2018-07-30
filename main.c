@@ -139,8 +139,11 @@ int main(int argc, char * const argv[]) {
 	int stdout_pair[2];
 	int stderr_pair[2];
 
-	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL) ||
-	   pipe(stderr_pair) == -1) {
+	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL)) {
+		err(EX_OSERR, "openpty");
+	}
+
+	if (pipe(stderr_pair) == -1) {
 		err(EX_OSERR , "pipe");
 	}
 
