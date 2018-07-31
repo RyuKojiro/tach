@@ -188,12 +188,15 @@ int main(int argc, char * const argv[]) {
 			}
 
 			if (nl || wrap) {
-				if (nl) {
-					printf(FMT_TS "%s", ARG_TS(diff), lastsep);
-				} else if (wrap) {
-					printf("%*s%s", TS_WIDTH, "", lastsep);
+				if (!first) {
+					if (nl) {
+						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
+					} else if (wrap) {
+						printf("%*s%s", TS_WIDTH, "", lastsep);
+					}
+
+					printf("\n");
 				}
-				printf("\n");
 				lb_reset(lb);
 
 				/* Update running statistics */
