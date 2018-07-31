@@ -1,6 +1,6 @@
 PROGNAME=ltime
 CFLAGS=-Wall -ggdb -std=c99
-SRCS=main.c time.c
+SRCS=main.c time.c linebuffer.c
 OBJS=$(SRCS:.c=.o)
 
 $(PROGNAME): $(OBJS)

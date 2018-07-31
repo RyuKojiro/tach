@@ -36,6 +36,7 @@
 #include <util.h>
 
 #include "time.h"
+#include "linebuffer.h"
 
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
 #define SEP_WIDTH     (3) /* " | " */
@@ -60,8 +61,7 @@ enum {
 };
 
 /* Dynamic line buffer */
-static char *buf;
-static size_t bufsize;
+struct linebuffer *lb_stdout;
 
 /* Signal handling */
 static volatile int interrupted;
@@ -80,9 +80,8 @@ static void winch(int sig) {
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
-	bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
-	buf = realloc(buf, bufsize + 1);
-	buf = memset(buf, 0, bufsize + 1);
+	size_t bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
+	lb_resize(lb_stdout, bufsize);
 }
 
 /*
@@ -197,10 +196,10 @@ int main(int argc, char * const argv[]) {
 	const struct timespec start = last;
 
 	/* Set up terminal width info tracking and buffer allocation */
+	lb_stdout = lb_create();
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
-	size_t got = 0;
 	bool wrap = false;
 	bool nl = true;
 	bool first = true;
@@ -225,8 +224,7 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 				printf("\n");
-				got = 0;
-				memset(buf, 0, bufsize + 1);
+				lb_reset(lb_stdout);
 
 				/* Update running statistics */
 				if (timespec_compare(&diff, &max) > 0) {
@@ -238,10 +236,10 @@ int main(int argc, char * const argv[]) {
 				first = false;
 			}
 
-			got += readln(child_stdout, buf + got, bufsize - got, &nl);
-			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", buf);
+			lb_stdout->cur += readln(child_stdout, lb_stdout->buf + lb_stdout->cur, lb_stdout->len - lb_stdout->cur, &nl);
+			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb_stdout->buf);
 
-			wrap = (got == bufsize);
+			wrap = (lb_stdout->cur == lb_stdout->len);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
@@ -257,7 +255,7 @@ int main(int argc, char * const argv[]) {
 			break;
 		}
 	}
-	free(buf);
+	lb_destroy(lb_stdout);
 	printf("\n");
 
 	const struct timespec diff = timespec_subtract(&now, &start);
