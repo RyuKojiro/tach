@@ -60,8 +60,9 @@ enum {
 	PIPE_IN,
 };
 
-/* Dynamic line buffer */
+/* Dynamic line buffers */
 struct linebuffer *lb_stdout;
+struct linebuffer *lb_stderr;
 
 /* Signal handling */
 static volatile int interrupted;
@@ -82,6 +83,7 @@ static void winch(int sig) {
 	/* Update buffer */
 	size_t bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
 	lb_resize(lb_stdout, bufsize);
+	lb_resize(lb_stderr, bufsize);
 }
 
 static void become(int fds[], int target) {
@@ -156,8 +158,11 @@ int main(int argc, char * const argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &last);
 	const struct timespec start = last;
 
-	/* Set up terminal width info tracking and buffer allocation */
+	/* Allocate line buffers */
 	lb_stdout = lb_create();
+	lb_stderr = lb_create();
+
+	/* Set up terminal width info tracking */
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
@@ -166,7 +171,9 @@ int main(int argc, char * const argv[]) {
 	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 1, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 2, &timeout)) {
+		int fd = (int)triggered.ident;
+		struct linebuffer *lb = (fd == child_stdout ? lb_stdout : lb_stderr);
 
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
@@ -185,7 +192,7 @@ int main(int argc, char * const argv[]) {
 					printf("%*s" FMT_SEP, TS_WIDTH, "");
 				}
 				printf("\n");
-				lb_reset(lb_stdout);
+				lb_reset(lb);
 
 				/* Update running statistics */
 				if (timespec_compare(&diff, &max) > 0) {
@@ -197,10 +204,11 @@ int main(int argc, char * const argv[]) {
 				first = false;
 			}
 
-			nl = lb_read(lb_stdout, child_stdout);
-			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb_stdout->buf);
+			/* Read the triggering event */
+			nl = lb_read(lb, fd);
+			wrap = lb_full(lb);
 
-			wrap = lb_full(lb_stdout);
+			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb->buf);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
@@ -217,6 +225,7 @@ int main(int argc, char * const argv[]) {
 		}
 	}
 	lb_destroy(lb_stdout);
+	lb_destroy(lb_stderr);
 	printf("\n");
 
 	const struct timespec diff = timespec_subtract(&now, &start);
