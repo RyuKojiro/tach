@@ -171,9 +171,11 @@ int main(int argc, char * const argv[]) {
 	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
+	const char *lastsep = FMT_SEP;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 2, &timeout)) {
 		int fd = (int)triggered.ident;
 		struct linebuffer *lb = (fd == child_stdout ? lb_stdout : lb_stderr);
+		const char *sep = (fd == child_stdout ? FMT_SEP : FMT_SEP_ERR);
 
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
@@ -187,9 +189,9 @@ int main(int argc, char * const argv[]) {
 
 			if (nl || wrap) {
 				if (nl) {
-					printf(FMT_TS "%s", ARG_TS(diff), FMT_SEP);
+					printf(FMT_TS "%s", ARG_TS(diff), lastsep);
 				} else if (wrap) {
-					printf("%*s%s", TS_WIDTH, "", FMT_SEP);
+					printf("%*s%s", TS_WIDTH, "", lastsep);
 				}
 				printf("\n");
 				lb_reset(lb);
@@ -208,14 +210,14 @@ int main(int argc, char * const argv[]) {
 			nl = lb_read(lb, fd);
 			wrap = lb_full(lb);
 
-			printf("%*s%s%s\r", TS_WIDTH, "", FMT_SEP, lb->buf);
+			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
 			 * spanning ~3.17 years of runtime to not have problems
 			 * with running out of timestamp columns.
 			 */
-			printf(FMT_TS "%s\r", ARG_TS(diff), FMT_SEP);
+			printf(FMT_TS "%s\r", ARG_TS(diff), sep);
 		}
 		fflush(stdout);
 
@@ -223,6 +225,9 @@ int main(int argc, char * const argv[]) {
 		if (interrupted) {
 			break;
 		}
+
+		/* Store this separator for blanking out before the newline */
+		lastsep = sep;
 	}
 	lb_destroy(lb_stdout);
 	lb_destroy(lb_stderr);
