@@ -26,8 +26,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-
 struct linebuffer *lb_create(void) {
 	return calloc(sizeof(struct linebuffer), 1);
 }
