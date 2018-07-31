@@ -187,9 +187,9 @@ int main(int argc, char * const argv[]) {
 
 			if (nl || wrap) {
 				if (nl) {
-					printf(FMT_TS FMT_SEP, ARG_TS(diff));
+					printf(FMT_TS "%s", ARG_TS(diff), FMT_SEP);
 				} else if (wrap) {
-					printf("%*s" FMT_SEP, TS_WIDTH, "");
+					printf("%*s%s", TS_WIDTH, "", FMT_SEP);
 				}
 				printf("\n");
 				lb_reset(lb);
@@ -208,14 +208,14 @@ int main(int argc, char * const argv[]) {
 			nl = lb_read(lb, fd);
 			wrap = lb_full(lb);
 
-			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb->buf);
+			printf("%*s%s%s\r", TS_WIDTH, "", FMT_SEP, lb->buf);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
 			 * spanning ~3.17 years of runtime to not have problems
 			 * with running out of timestamp columns.
 			 */
-			printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
+			printf(FMT_TS "%s\r", ARG_TS(diff), FMT_SEP);
 		}
 		fflush(stdout);
 
