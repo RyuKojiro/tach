@@ -24,6 +24,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
@@ -34,6 +35,9 @@ struct linebuffer *lb_create(void) {
 void lb_destroy(struct linebuffer *line) {
 	if (line->buf) {
 		free(line->buf);
+	}
+	if (line->tmp) {
+		free(line->tmp);
 	}
 	free(line);
 }
@@ -50,9 +54,40 @@ void lb_reset(struct linebuffer *line) {
 	line->cur = 0;
 }
 
-void lb_append(struct linebuffer *line, size_t len, const char *str) {
-	len = MIN(len, line->len - line->cur);
-	strncpy(line->buf + line->cur, str, len);
+void lb_read(struct linebuffer *line, int fd, bool *newline) {
+	char *now = line->buf + line->cur;
+	*newline = false;
+
+	ssize_t cur;
+	if (line->tmp) {
+		cur = (ssize_t)strlen(line->tmp);
+		strncpy(now, line->tmp, cur);
+		free(line->tmp);
+		line->tmp = NULL;
+	} else {
+		cur = read(fd, now, line->len - line->cur);
+		now[cur] = '\0';
+	}
+
+	char *nl = strchr(now, '\n');
+	if (nl) {
+		/*
+		 * If there is a newline and it's at the tail end, chop it off.
+		 * If it's not the tail end, then split the buffer, hold onto the
+		 * latter half, and return the first half.
+		 */
+		*nl = '\0';
+		*newline = true;
+
+		if (nl - now != cur - 1) {
+			line->tmp = strdup(nl+1);
+			cur = nl - now;
+		} else {
+			cur--;
+		}
+	}
+
+	line->cur += (size_t)cur;
 }
 
 bool lb_full(struct linebuffer *line) {

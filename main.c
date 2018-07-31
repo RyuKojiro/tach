@@ -84,45 +84,6 @@ static void winch(int sig) {
 	lb_resize(lb_stdout, bufsize);
 }
 
-/*
- * Like getline(3), but rather than including the newline it simply
- * indicates the presence of the newline.
- */
-static size_t readln(int fd, char *buf, size_t len, bool *newline) {
-	static char *leftovers;
-	*newline = false;
-
-	ssize_t cur;
-	if (leftovers) {
-		cur = (ssize_t)strlen(leftovers);
-		strncpy(buf, leftovers, cur);
-		free(leftovers);
-		leftovers = NULL;
-	} else {
-		cur = read(fd, buf, len);
-		buf[cur] = '\0';
-	}
-
-	char *nl = strchr(buf, '\n');
-	if (nl) {
-		/*
-		 * If there is a newline and it's at the tail end, chop it off.
-		 * If it's not the tail end, then split the buffer, hold onto the
-		 * latter half, and return the first half.
-		 */
-		*nl = '\0';
-		*newline = true;
-
-		if (nl - buf != cur - 1) {
-			leftovers = strdup(nl+1);
-			cur = nl - buf;
-		} else {
-			cur--;
-		}
-	}
-	return (size_t)cur;
-}
-
 static void become(int fds[], int target) {
 	while ((dup2(fds[PIPE_IN], target) == -1) && (errno == EINTR));
 	close(fds[PIPE_OUT]);
@@ -236,7 +197,7 @@ int main(int argc, char * const argv[]) {
 				first = false;
 			}
 
-			lb_stdout->cur += readln(child_stdout, lb_stdout->buf + lb_stdout->cur, lb_stdout->len - lb_stdout->cur, &nl);
+			lb_read(lb_stdout, child_stdout, &nl);
 			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb_stdout->buf);
 
 			wrap = lb_full(lb_stdout);

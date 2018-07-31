@@ -24,14 +24,24 @@
 #include <stdbool.h>
 
 struct linebuffer {
+	/** The actual string, guaranteed to be NULL terminated. */
 	char *buf;
+	/** The buffer size. */
 	size_t len;
+	/** The current string length. */
 	size_t cur;
+	/** A temporary holding buffer for reads that span a newline */
+	char *tmp;
 };
 
 struct linebuffer *lb_create(void);
 void lb_destroy(struct linebuffer *line);
 void lb_resize(struct linebuffer *line, size_t size);
 void lb_reset(struct linebuffer *line);
-void lb_append(struct linebuffer *line, size_t len, const char *str);
 bool lb_full(struct linebuffer *line);
+
+/*
+ * Like getline(3), but rather than including the newline it simply indicates
+ * the presence of the newline.
+ */
+void lb_read(struct linebuffer *line, int fd, bool *nl);
