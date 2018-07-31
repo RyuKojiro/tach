@@ -93,9 +93,6 @@ static void become(int fds[], int target) {
 }
 
 int main(int argc, char * const argv[]) {
-	(void)argc;
-	(void)argv;
-
 	/* Catch SIGINT to make sure we get a chance to print final stats */
 	signal(SIGINT, interrupt);
 
