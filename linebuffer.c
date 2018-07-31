@@ -54,9 +54,9 @@ void lb_reset(struct linebuffer *line) {
 	line->cur = 0;
 }
 
-void lb_read(struct linebuffer *line, int fd, bool *newline) {
+bool lb_read(struct linebuffer *line, int fd) {
 	char *now = line->buf + line->cur;
-	*newline = false;
+	bool newline = false;
 
 	ssize_t cur;
 	if (line->tmp) {
@@ -77,7 +77,7 @@ void lb_read(struct linebuffer *line, int fd, bool *newline) {
 		 * latter half, and return the first half.
 		 */
 		*nl = '\0';
-		*newline = true;
+		newline = true;
 
 		if (nl - now != cur - 1) {
 			line->tmp = strdup(nl+1);
@@ -88,6 +88,8 @@ void lb_read(struct linebuffer *line, int fd, bool *newline) {
 	}
 
 	line->cur += (size_t)cur;
+
+	return newline;
 }
 
 bool lb_full(struct linebuffer *line) {

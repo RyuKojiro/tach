@@ -197,7 +197,7 @@ int main(int argc, char * const argv[]) {
 				first = false;
 			}
 
-			lb_read(lb_stdout, child_stdout, &nl);
+			nl = lb_read(lb_stdout, child_stdout);
 			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb_stdout->buf);
 
 			wrap = lb_full(lb_stdout);
