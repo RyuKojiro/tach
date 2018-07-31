@@ -36,15 +36,18 @@
 #include <util.h>
 
 #include "time.h"
+#include "linebuffer.h"
 
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
 #define SEP_WIDTH     (3) /* " | " */
 
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
+#define COLOR_ERR     "\x1b[30;41m"
 
 #define FMT_TS        "%8ld.%03ld"
 #define FMT_SEP       " " COLOR_SEP " " COLOR_RESET " "
+#define FMT_SEP_ERR   " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
 /*
@@ -57,9 +60,9 @@ enum {
 	PIPE_IN,
 };
 
-/* Dynamic line buffer */
-static char *buf;
-static size_t bufsize;
+/* Dynamic line buffers */
+struct linebuffer *lb_stdout;
+struct linebuffer *lb_stderr;
 
 /* Signal handling */
 static volatile int interrupted;
@@ -78,48 +81,9 @@ static void winch(int sig) {
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
-	bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
-	buf = realloc(buf, bufsize + 1);
-	buf = memset(buf, 0, bufsize + 1);
-}
-
-/*
- * Like getline(3), but rather than including the newline it simply
- * indicates the presence of the newline.
- */
-static size_t readln(int fd, char *buf, size_t len, bool *newline) {
-	static char *leftovers;
-	*newline = false;
-
-	ssize_t cur;
-	if (leftovers) {
-		cur = (ssize_t)strlen(leftovers);
-		strncpy(buf, leftovers, cur);
-		free(leftovers);
-		leftovers = NULL;
-	} else {
-		cur = read(fd, buf, len);
-		buf[cur] = '\0';
-	}
-
-	char *nl = strchr(buf, '\n');
-	if (nl) {
-		/*
-		 * If there is a newline and it's at the tail end, chop it off.
-		 * If it's not the tail end, then split the buffer, hold onto the
-		 * latter half, and return the first half.
-		 */
-		*nl = '\0';
-		*newline = true;
-
-		if (nl - buf != cur - 1) {
-			leftovers = strdup(nl+1);
-			cur = nl - buf;
-		} else {
-			cur--;
-		}
-	}
-	return (size_t)cur;
+	size_t bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
+	lb_resize(lb_stdout, bufsize);
+	lb_resize(lb_stderr, bufsize);
 }
 
 static void become(int fds[], int target) {
@@ -139,8 +103,11 @@ int main(int argc, char * const argv[]) {
 	int stdout_pair[2];
 	int stderr_pair[2];
 
-	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL) ||
-	   pipe(stderr_pair) == -1) {
+	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL)) {
+		err(EX_OSERR, "openpty");
+	}
+
+	if (pipe(stderr_pair) == -1) {
 		err(EX_OSERR , "pipe");
 	}
 
@@ -191,17 +158,24 @@ int main(int argc, char * const argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &last);
 	const struct timespec start = last;
 
-	/* Set up terminal width info tracking and buffer allocation */
+	/* Allocate line buffers */
+	lb_stdout = lb_create();
+	lb_stderr = lb_create();
+
+	/* Set up terminal width info tracking */
 	winch(SIGWINCH);
 	signal(SIGWINCH, winch);
 
-	size_t got = 0;
 	bool wrap = false;
 	bool nl = true;
 	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 1, &triggered, 1, &timeout)) {
+	const char *lastsep = FMT_SEP;
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 2, &timeout)) {
+		int fd = (int)triggered.ident;
+		struct linebuffer *lb = (fd == child_stdout ? lb_stdout : lb_stderr);
+		const char *sep = (fd == child_stdout ? FMT_SEP : FMT_SEP_ERR);
 
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
@@ -215,13 +189,12 @@ int main(int argc, char * const argv[]) {
 
 			if (nl || wrap) {
 				if (nl) {
-					printf(FMT_TS FMT_SEP, ARG_TS(diff));
+					printf(FMT_TS "%s", ARG_TS(diff), lastsep);
 				} else if (wrap) {
-					printf("%*s" FMT_SEP, TS_WIDTH, "");
+					printf("%*s%s", TS_WIDTH, "", lastsep);
 				}
 				printf("\n");
-				got = 0;
-				memset(buf, 0, bufsize + 1);
+				lb_reset(lb);
 
 				/* Update running statistics */
 				if (timespec_compare(&diff, &max) > 0) {
@@ -233,17 +206,18 @@ int main(int argc, char * const argv[]) {
 				first = false;
 			}
 
-			got += readln(child_stdout, buf + got, bufsize - got, &nl);
-			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", buf);
+			/* Read the triggering event */
+			nl = lb_read(lb, fd);
+			wrap = lb_full(lb);
 
-			wrap = (got == bufsize);
+			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
 			 * spanning ~3.17 years of runtime to not have problems
 			 * with running out of timestamp columns.
 			 */
-			printf(FMT_TS FMT_SEP "\r", ARG_TS(diff));
+			printf(FMT_TS "%s\r", ARG_TS(diff), sep);
 		}
 		fflush(stdout);
 
@@ -251,8 +225,12 @@ int main(int argc, char * const argv[]) {
 		if (interrupted) {
 			break;
 		}
+
+		/* Store this separator for blanking out before the newline */
+		lastsep = sep;
 	}
-	free(buf);
+	lb_destroy(lb_stdout);
+	lb_destroy(lb_stderr);
 	printf("\n");
 
 	const struct timespec diff = timespec_subtract(&now, &start);
