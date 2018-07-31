@@ -21,6 +21,7 @@
  */
 
 #include <stddef.h>
+#include <stdbool.h>
 
 struct linebuffer {
 	char *buf;
@@ -33,3 +34,4 @@ void lb_destroy(struct linebuffer *line);
 void lb_resize(struct linebuffer *line, size_t size);
 void lb_reset(struct linebuffer *line);
 void lb_append(struct linebuffer *line, size_t len, const char *str);
+bool lb_full(struct linebuffer *line);

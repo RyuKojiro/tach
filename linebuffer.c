@@ -54,3 +54,7 @@ void lb_append(struct linebuffer *line, size_t len, const char *str) {
 	len = MIN(len, line->len - line->cur);
 	strncpy(line->buf + line->cur, str, len);
 }
+
+bool lb_full(struct linebuffer *line) {
+	return line->cur == line->len;
+}

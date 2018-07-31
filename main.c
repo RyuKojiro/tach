@@ -239,7 +239,7 @@ int main(int argc, char * const argv[]) {
 			lb_stdout->cur += readln(child_stdout, lb_stdout->buf + lb_stdout->cur, lb_stdout->len - lb_stdout->cur, &nl);
 			printf("%*s" FMT_SEP "%s\r", TS_WIDTH, "", lb_stdout->buf);
 
-			wrap = (lb_stdout->cur == lb_stdout->len);
+			wrap = lb_full(lb_stdout);
 		} else if (!first) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
