@@ -61,8 +61,8 @@ enum {
 };
 
 /* Dynamic line buffers */
-struct linebuffer *lb_stdout;
-struct linebuffer *lb_stderr;
+static struct linebuffer *lb_stdout;
+static struct linebuffer *lb_stderr;
 
 /* Signal handling */
 static volatile int interrupted;
