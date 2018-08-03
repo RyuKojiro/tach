@@ -169,7 +169,7 @@ int main(int argc, char * const argv[]) {
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	const char *lastsep = FMT_SEP;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 2, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 1, &timeout)) {
 		int fd = (int)triggered.ident;
 		struct linebuffer *lb = (fd == child_stdout ? lb_stdout : lb_stderr);
 		const char *sep = (fd == child_stdout ? FMT_SEP : FMT_SEP_ERR);
