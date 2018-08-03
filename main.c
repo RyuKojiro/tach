@@ -92,7 +92,17 @@ static void become(int fds[], int target) {
 	close(fds[PIPE_IN]);
 }
 
+static int mkpipe(int fds[2], bool usepty) {
+	if (usepty) {
+		return openpty(&fds[PIPE_OUT], &fds[PIPE_IN], NULL, NULL, NULL);
+	} else {
+		return pipe(fds) == -1;
+	}
+}
+
 int main(int argc, char * const argv[]) {
+	bool usepty = true;
+
 	/* Catch SIGINT to make sure we get a chance to print final stats */
 	signal(SIGINT, interrupt);
 
@@ -100,12 +110,9 @@ int main(int argc, char * const argv[]) {
 	int stdout_pair[2];
 	int stderr_pair[2];
 
-	if(openpty(&stdout_pair[PIPE_OUT], &stdout_pair[PIPE_IN], NULL, NULL, NULL)) {
-		err(EX_OSERR, "openpty");
-	}
-
-	if (pipe(stderr_pair) == -1) {
-		err(EX_OSERR , "pipe");
+	if(mkpipe(stdout_pair, usepty) ||
+	   mkpipe(stderr_pair, usepty)) {
+		err(EX_OSERR, "mkpipe");
 	}
 
 	/*
