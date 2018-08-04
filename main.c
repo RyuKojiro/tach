@@ -147,14 +147,14 @@ int main(int argc, char * const argv[]) {
 	switch (vfork()) {
 		case -1: { /* error */
 			err(EX_OSERR, "vfork");
-		} break;
+		}
 		case 0: { /* child */
 			become(stdout_pair, STDOUT_FILENO);
 			become(stderr_pair, STDERR_FILENO);
 
 			execvp(argv[0], argv);
 			err(EX_OSERR, "execv");
-		} break;
+		}
 	}
 
 	const int child_stdout = stdout_pair[PIPE_OUT];
