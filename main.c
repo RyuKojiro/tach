@@ -100,8 +100,25 @@ static int mkpipe(int fds[2], bool usepty) {
 	}
 }
 
+static void usage(void) {
+	errx(EX_USAGE, "ltime [-p] command [arg1 ...]");
+}
+
 int main(int argc, char * const argv[]) {
 	bool usepty = true;
+
+	int ch;
+	while ((ch = getopt(argc, argv, "p")) != -1) {
+		switch (ch) {
+			case 'p': {
+					usepty = false;
+				} break;
+			default:
+				usage();
+		}
+	}
+	argc -= optind;
+	argv += optind;
 
 	/* Catch SIGINT to make sure we get a chance to print final stats */
 	signal(SIGINT, interrupt);
@@ -132,7 +149,7 @@ int main(int argc, char * const argv[]) {
 			become(stdout_pair, STDOUT_FILENO);
 			become(stderr_pair, STDERR_FILENO);
 
-			execvp(argv[1], argv + 1);
+			execvp(argv[0], argv);
 			err(EX_OSERR, "execv");
 		} break;
 	}
