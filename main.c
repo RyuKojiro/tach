@@ -104,7 +104,7 @@ static void mkpipe(int fds[2], bool usepty) {
 	}
 }
 
-static void usage(void) {
+static __attribute__((noreturn)) void usage(void) {
 	errx(EX_USAGE, "ltime [-p] command [arg1 ...]");
 }
 
