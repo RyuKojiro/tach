@@ -92,11 +92,15 @@ static void become(int fds[], int target) {
 	close(fds[PIPE_IN]);
 }
 
-static int mkpipe(int fds[2], bool usepty) {
+static void mkpipe(int fds[2], bool usepty) {
 	if (usepty) {
-		return openpty(&fds[PIPE_OUT], &fds[PIPE_IN], NULL, NULL, NULL);
+		if(openpty(&fds[PIPE_OUT], &fds[PIPE_IN], NULL, NULL, NULL)) {
+			err(EX_OSERR, "openpty");
+		}
 	} else {
-		return pipe(fds) == -1;
+		if(pipe(fds) == -1) {
+			err(EX_OSERR, "pipe");
+		}
 	}
 }
 
@@ -127,10 +131,9 @@ int main(int argc, char * const argv[]) {
 	int stdout_pair[2];
 	int stderr_pair[2];
 
-	if(mkpipe(stdout_pair, usepty) ||
-	   mkpipe(stderr_pair, usepty)) {
-		err(EX_OSERR, "mkpipe");
-	}
+	/* Create whichever pipe type is appropriate */
+	mkpipe(stdout_pair, usepty);
+	mkpipe(stderr_pair, usepty);
 
 	/*
 	 *  Fork and connect the pipes to the child process
