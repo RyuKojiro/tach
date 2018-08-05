@@ -31,6 +31,7 @@
 #include <sys/event.h>
 #include <sys/ioctl.h>
 #include <sysexits.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "linebuffer.h"
