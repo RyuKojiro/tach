@@ -15,6 +15,9 @@ install: $(PROGNAME)
 clean: 
 	rm -f $(PROGNAME) $(OBJS)
 
+.c.o:
+	$(CC) $(CFLAGS) -c -o $@ $<
+
 .PHONY: clean install
 	
 .POSIX:
