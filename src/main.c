@@ -49,6 +49,11 @@
 #define FMT_SEP_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
+/* Timer display refresh rate */
+static const struct timespec timeout = {
+	.tv_nsec = 17 * NSEC_PER_MSEC, /* ~60 Hz */
+};
+
 /* Dynamic line buffers */
 static struct linebuffer *lb_stdout;
 static struct linebuffer *lb_stderr;
@@ -102,10 +107,6 @@ int main(int argc, char * const argv[]) {
 	const struct descriptors child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
-	const struct timespec timeout = {
-		.tv_nsec = NSEC_PER_MSEC,
-	};
-
 	struct kevent ev[2];
 	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
