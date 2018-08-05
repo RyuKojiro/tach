@@ -24,7 +24,12 @@
 #include <errno.h>
 #include <sysexits.h>
 #include <unistd.h>
+
+#if __FreeBSD__
+#include <libutil.h>
+#else
 #include <util.h>
+#endif
 
 #include "pipe.h"
 
