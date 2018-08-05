@@ -27,6 +27,8 @@
 
 #if __FreeBSD__
 #include <libutil.h>
+#elif __linux__
+#include <pty.h>
 #else
 #include <util.h>
 #endif
