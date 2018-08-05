@@ -1,5 +1,6 @@
 PROGNAME= tach
 CFLAGS=   -Wall -ggdb -std=c99
+LDFLAGS=  -lutil
 SRCS=     src/main.c src/time.c src/linebuffer.c
 OBJS=     $(SRCS:.c=.o)
 PREFIX?=  /usr/local
