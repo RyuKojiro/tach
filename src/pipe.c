@@ -36,7 +36,7 @@
 /*
  * pipe(2) and openpty(3) create descriptor pairs where the 0 index is the
  * output, and the 1 index is the input. Rather than hardcode these indexes
- * everywhere, let's use named indexes.
+ * everywhere, let's use named indices.
  */
 enum {
 	PIPE_OUT,
