@@ -87,12 +87,13 @@ static __attribute__((noreturn)) void usage(const char *progname) {
 int main(int argc, char * const argv[]) {
 	bool usepty = true;
 
+	/* Process any command line flags */
 	int ch;
 	while ((ch = getopt(argc, argv, "p")) != -1) {
 		switch (ch) {
 			case 'p': {
-					usepty = false;
-				} break;
+				usepty = false;
+			} break;
 			default:
 				usage(argv[0]);
 		}
