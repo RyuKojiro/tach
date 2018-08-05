@@ -65,7 +65,7 @@ static struct linebuffer *lb_stdout;
 static struct linebuffer *lb_stderr;
 
 /* Signal handling */
-static volatile int interrupted;
+static volatile bool interrupted;
 
 static void interrupt(int sig) {
 	assert(sig == SIGINT);
