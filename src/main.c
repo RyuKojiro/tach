@@ -151,6 +151,7 @@ int main(int argc, char * const argv[]) {
 				break;
 			}
 
+			/* Finalize the previous line and advance */
 			if (nl || wrap) {
 				if (!first) {
 					if (nl) {
@@ -168,7 +169,7 @@ int main(int argc, char * const argv[]) {
 					max = diff;
 				}
 
-				/* Update the last timestamp to diff against */
+				/* Update the start-of-line timestamp we'll diff against */
 				last = now;
 				first = false;
 			}
@@ -200,6 +201,7 @@ int main(int argc, char * const argv[]) {
 	lb_destroy(lb_stderr);
 	printf("\n");
 
+	/* Final statistics */
 	const struct timespec diff = timespec_subtract(&now, &start);
 	printf("Total: %6lu.%06lu\n", diff.tv_sec, diff.tv_nsec / NSEC_PER_USEC);
 	printf("Max:   %6lu.%06lu\n", max.tv_sec, max.tv_nsec / NSEC_PER_USEC);
