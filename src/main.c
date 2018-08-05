@@ -104,8 +104,8 @@ static void mkpipe(int fds[2], bool usepty) {
 	}
 }
 
-static __attribute__((noreturn)) void usage(void) {
-	errx(EX_USAGE, "ltime [-p] command [arg1 ...]");
+static __attribute__((noreturn)) void usage(const char *progname) {
+	errx(EX_USAGE, "usage: %s [-p] command [arg1 ...]", progname);
 }
 
 int main(int argc, char * const argv[]) {
@@ -118,7 +118,7 @@ int main(int argc, char * const argv[]) {
 					usepty = false;
 				} break;
 			default:
-				usage();
+				usage(argv[0]);
 		}
 	}
 	argc -= optind;
