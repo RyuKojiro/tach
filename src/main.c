@@ -22,7 +22,6 @@
 
 #include <assert.h>
 #include <err.h>
-#include <errno.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -32,10 +31,10 @@
 #include <sys/ioctl.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <util.h>
 
-#include "time.h"
 #include "linebuffer.h"
+#include "time.h"
+#include "pipe.h"
 
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
 #define SEP_WIDTH     (3) /* " | " */
@@ -48,16 +47,6 @@
 #define FMT_SEP       COLOR_RESET " " COLOR_SEP " " COLOR_RESET " "
 #define FMT_SEP_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
-
-/*
- * pipe(2) creates a descriptor pair where the 0 index is the output, and the 1
- * index is the input. Rather than hardcode these indexes everywhere, let's use
- * named indexes.
- */
-enum {
-	PIPE_OUT,
-	PIPE_IN,
-};
 
 /* Dynamic line buffers */
 static struct linebuffer *lb_stdout;
@@ -85,24 +74,6 @@ static void winch(int sig) {
 	lb_resize(lb_stderr, bufsize);
 }
 
-static void become(int fds[], int target) {
-	while ((dup2(fds[PIPE_IN], target) == -1) && (errno == EINTR));
-	close(fds[PIPE_OUT]);
-	close(fds[PIPE_IN]);
-}
-
-static void mkpipe(int fds[2], bool usepty) {
-	if (usepty) {
-		if(openpty(&fds[PIPE_OUT], &fds[PIPE_IN], NULL, NULL, NULL)) {
-			err(EX_OSERR, "openpty");
-		}
-	} else {
-		if(pipe(fds) == -1) {
-			err(EX_OSERR, "pipe");
-		}
-	}
-}
-
 static __attribute__((noreturn)) void usage(const char *progname) {
 	errx(EX_USAGE, "usage: %s [-p] command [arg1 ...]", progname);
 }
@@ -126,41 +97,8 @@ int main(int argc, char * const argv[]) {
 	/* Catch SIGINT to make sure we get a chance to print final stats */
 	signal(SIGINT, interrupt);
 
-	/* Setup stdout and stderr pipes */
-	int stdout_pair[2];
-	int stderr_pair[2];
-
-	/* Create whichever pipe type is appropriate */
-	mkpipe(stdout_pair, usepty);
-	mkpipe(stderr_pair, usepty);
-
-	/*
-	 *  Fork and connect the pipes to the child process
-	 *
-	 *      <- Flow direction <-
-	 *   PIPE_OUT  (pipe)  PIPE_IN
-	 * Parent [==============] Child
-	 *  child_stdout        stdout
-	 *  child_stderr        stderr
-	 */
-	switch (vfork()) {
-		case -1: { /* error */
-			err(EX_OSERR, "vfork");
-		}
-		case 0: { /* child */
-			become(stdout_pair, STDOUT_FILENO);
-			become(stderr_pair, STDERR_FILENO);
-
-			execvp(argv[0], argv);
-			err(EX_OSERR, "execv");
-		}
-	}
-
-	const int child_stdout = stdout_pair[PIPE_OUT];
-	const int child_stderr = stderr_pair[PIPE_OUT];
-
-	close(stdout_pair[PIPE_IN]);
-	close(stderr_pair[PIPE_IN]);
+	/* Spawn the child and hook the pipes up */
+	const struct descriptors child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
 	const struct timespec timeout = {
@@ -168,8 +106,8 @@ int main(int argc, char * const argv[]) {
 	};
 
 	struct kevent ev[2];
-	EV_SET(ev + 0, child_stdout, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-	EV_SET(ev + 1, child_stderr, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -197,8 +135,8 @@ int main(int argc, char * const argv[]) {
 	const char *lastsep = FMT_SEP;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 1, &timeout)) {
 		int fd = (int)triggered.ident;
-		struct linebuffer *lb = (fd == child_stdout ? lb_stdout : lb_stderr);
-		const char *sep = (fd == child_stdout ? FMT_SEP : FMT_SEP_ERR);
+		struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
+		const char *sep = (fd == child.out ? FMT_SEP : FMT_SEP_ERR);
 
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
