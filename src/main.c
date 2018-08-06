@@ -55,11 +55,7 @@ static const struct timespec timeout = {
 	.tv_nsec = 17 * NSEC_PER_MSEC, /* ~60 Hz */
 };
 
-/* Dynamic line buffers */
-static struct linebuffer *lb_stdout;
-static struct linebuffer *lb_stderr;
-
-static void winch(void) {
+static void winch(struct linebuffer *lb_stdout, struct linebuffer *lb_stderr) {
 	/* Get window size */
 	struct winsize w;
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
@@ -117,11 +113,11 @@ int main(int argc, char * const argv[]) {
 	const struct timespec start = last;
 
 	/* Allocate line buffers */
-	lb_stdout = lb_create();
-	lb_stderr = lb_create();
+	struct linebuffer *lb_stdout = lb_create();
+	struct linebuffer *lb_stderr = lb_create();
 
 	/* Set up terminal width info tracking */
-	winch();
+	winch(lb_stdout, lb_stderr);
 	EV_SET(ev + 2, SIGWINCH, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
 	/*
@@ -148,7 +144,7 @@ int main(int argc, char * const argv[]) {
 		if (triggered.filter == EVFILT_SIGNAL) {
 			switch (triggered.ident) {
 				case SIGWINCH:
-					winch();
+					winch(lb_stdout, lb_stderr);
 					continue;
 				case SIGINT:
 					goto done;
