@@ -87,6 +87,7 @@ static __attribute__((noreturn)) void usage(const char *progname) {
 
 int main(int argc, char * const argv[]) {
 	bool usepty = true;
+	const char * const progname = argv[0];
 
 	/* Process any command line flags */
 	int ch;
@@ -96,11 +97,17 @@ int main(int argc, char * const argv[]) {
 				usepty = false;
 			} break;
 			default:
-				usage(argv[0]);
+				usage(progname);
 		}
 	}
 	argc -= optind;
 	argv += optind;
+
+	/* Make sure we were actually given a command */
+	if (argc == 0) {
+		warnx("You must specify a command.");
+		usage(progname);
+	}
 
 	/* Catch SIGINT to make sure we get a chance to print final stats */
 	signal(SIGINT, interrupt);
