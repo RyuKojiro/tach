@@ -59,15 +59,6 @@ static const struct timespec timeout = {
 static struct linebuffer *lb_stdout;
 static struct linebuffer *lb_stderr;
 
-/* Signal handling */
-static volatile bool interrupted;
-
-static void interrupt(int sig) {
-	assert(sig == SIGINT);
-
-	interrupted++;
-}
-
 static void winch(void) {
 	/* Get window size */
 	struct winsize w;
@@ -107,14 +98,11 @@ int main(int argc, char * const argv[]) {
 		usage(progname);
 	}
 
-	/* Catch SIGINT to make sure we get a chance to print final stats */
-	signal(SIGINT, interrupt);
-
 	/* Spawn the child and hook the pipes up */
 	const struct descriptors child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
-	struct kevent ev[3];
+	struct kevent ev[4];
 	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
@@ -134,7 +122,15 @@ int main(int argc, char * const argv[]) {
 
 	/* Set up terminal width info tracking */
 	winch();
-	EV_SET(ev + 2, SIGWINCH, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	EV_SET(ev + 2, SIGWINCH, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+
+	/*
+	 * Catch SIGINT to make sure we get a chance to print final stats.
+	 * The signal needs to be masked to ignore first, otherwise it will
+	 * terminate the process before ever getting to the kqueue.
+	 */
+	signal(SIGINT, SIG_IGN);
+	EV_SET(ev + 3, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
 	bool wrap = false;
 	bool nl = true;
@@ -142,7 +138,23 @@ int main(int argc, char * const argv[]) {
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	const char *lastsep = FMT_SEP;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 3, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 4, &triggered, 1, &timeout)) {
+		/* Is the child done? */
+		if (triggered.flags & EV_EOF) {
+			break;
+		}
+
+		/* Did we get a signal? */
+		if (triggered.filter == EVFILT_SIGNAL) {
+			switch (triggered.ident) {
+				case SIGWINCH:
+					winch();
+					continue;
+				case SIGINT:
+					goto done;
+			}
+		}
+
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
@@ -156,13 +168,6 @@ int main(int argc, char * const argv[]) {
 			/* Is the child done? */
 			if (triggered.flags & EV_EOF) {
 				break;
-			}
-
-			/* Did we get a SIGWINCH? */
-			if (triggered.filter == EVFILT_SIGNAL &&
-			    triggered.ident == SIGWINCH) {
-				winch();
-				continue;
 			}
 
 			/* Finalize the previous line and advance */
@@ -186,7 +191,7 @@ int main(int argc, char * const argv[]) {
 				/* Update the start-of-line timestamp we'll diff against */
 				last = now;
 				first = false;
-			}
+		}
 
 			/* Read the triggering event */
 			nl = lb_read(lb, fd);
@@ -203,14 +208,11 @@ int main(int argc, char * const argv[]) {
 		}
 		fflush(stdout);
 
-		/* Check to see if we got a SIGINT */
-		if (interrupted) {
-			break;
-		}
-
 		/* Store this separator for blanking out before the newline */
 		lastsep = sep;
 	}
+
+done:
 	lb_destroy(lb_stdout);
 	lb_destroy(lb_stderr);
 	printf("\n");
