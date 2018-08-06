@@ -143,16 +143,16 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	const char *lastsep = FMT_SEP;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 3, &triggered, 1, &timeout)) {
-		int fd = (int)triggered.ident;
-		struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
-		const char *sep = (fd == child.out ? FMT_SEP : FMT_SEP_ERR);
-
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
 
-		/* There is only one event at a time */
-		if (nev) {
+		/* Handle the event */
+		const int fd = (int)triggered.ident;
+		const char *sep = (fd == child.out ? FMT_SEP : FMT_SEP_ERR);
+		if (nev) { /* There is only one event at a time */
+			struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
+
 			/* Is the child done? */
 			if (triggered.flags & EV_EOF) {
 				break;
