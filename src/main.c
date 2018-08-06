@@ -128,6 +128,7 @@ int main(int argc, char * const argv[]) {
 	signal(SIGINT, SIG_IGN);
 	EV_SET(ev + 3, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
+	/* The main kevent loop */
 	bool wrap = false;
 	bool nl = true;
 	bool first = true;
