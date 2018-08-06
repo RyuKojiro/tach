@@ -68,9 +68,7 @@ static void interrupt(int sig) {
 	interrupted++;
 }
 
-static void winch(int sig) {
-	assert(sig == SIGWINCH);
-
+static void winch(void) {
 	/* Get window size */
 	struct winsize w;
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
@@ -116,9 +114,9 @@ int main(int argc, char * const argv[]) {
 	const struct descriptors child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
-	struct kevent ev[2];
-	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
-	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, 0);
+	struct kevent ev[3];
+	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -135,8 +133,8 @@ int main(int argc, char * const argv[]) {
 	lb_stderr = lb_create();
 
 	/* Set up terminal width info tracking */
-	winch(SIGWINCH);
-	signal(SIGWINCH, winch);
+	winch();
+	EV_SET(ev + 2, SIGWINCH, EVFILT_SIGNAL, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	bool wrap = false;
 	bool nl = true;
@@ -144,7 +142,7 @@ int main(int argc, char * const argv[]) {
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	const char *lastsep = FMT_SEP;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 2, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 3, &triggered, 1, &timeout)) {
 		int fd = (int)triggered.ident;
 		struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
 		const char *sep = (fd == child.out ? FMT_SEP : FMT_SEP_ERR);
@@ -155,8 +153,16 @@ int main(int argc, char * const argv[]) {
 
 		/* There is only one event at a time */
 		if (nev) {
+			/* Is the child done? */
 			if (triggered.flags & EV_EOF) {
 				break;
+			}
+
+			/* Did we get a SIGWINCH? */
+			if (triggered.filter == EVFILT_SIGNAL &&
+			    triggered.ident == SIGWINCH) {
+				winch();
+				continue;
 			}
 
 			/* Finalize the previous line and advance */
