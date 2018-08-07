@@ -71,15 +71,19 @@ static __attribute__((noreturn)) void usage(const char *progname) {
 }
 
 int main(int argc, char * const argv[]) {
+	bool slow = false;
 	bool usepty = true;
 	const char * const progname = argv[0];
 
 	/* Process any command line flags */
 	int ch;
-	while ((ch = getopt(argc, argv, "p")) != -1) {
+	while ((ch = getopt(argc, argv, "lp")) != -1) {
 		switch (ch) {
 			case 'p': {
 				usepty = false;
+			} break;
+			case 'l': {
+				slow = true;
 			} break;
 			default:
 				usage(progname);
@@ -195,7 +199,7 @@ int main(int argc, char * const argv[]) {
 			wrap = lb_full(lb);
 
 			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
-		} else if (!first) {
+		} else if (!first && !slow) {
 			/*
 			 * 8 digits on the left-hand-side will allow for a process
 			 * spanning ~3.17 years of runtime to not have problems
