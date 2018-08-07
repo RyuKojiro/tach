@@ -1,0 +1,31 @@
+.Dd 8/6/18
+.Dt TACH 1
+.Sh NAME
+.Nm tach
+.Nd time execution, line-by-line
+.Sh SYNOPSIS
+.Nm
+.Op Fl lp
+.Ar command
+.Op Ar arg0 ...
+.Sh DESCRIPTION
+The
+.Nm
+utility executes a given command, wrapping the output with a left margin that tracks the time taken for each line output.
+.Pp
+A list of flags and their descriptions:
+.Bl -tag -width -indent
+.It Fl l
+Low bandwidth mode. This minimizes the number of unnecessary screen updates, rather than giving a rolling millisecond precision, only the final timestamp of a line is printed.
+.It Fl p
+Connect the child process using
+.Fn pipe
+rather than
+.Fn openpty .
+By default,
+.Fn openpty
+is used.
+.El
+.Pp
+.Sh SEE ALSO
+.Xr time 1
