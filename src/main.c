@@ -67,7 +67,7 @@ static void winch(struct linebuffer *lb_stdout, struct linebuffer *lb_stderr) {
 }
 
 static __attribute__((noreturn)) void usage(const char *progname) {
-	errx(EX_USAGE, "usage: %s [-p] command [arg1 ...]", progname);
+	errx(EX_USAGE, "usage: %s [-lp] command [arg0 ...]", progname);
 }
 
 int main(int argc, char * const argv[]) {
