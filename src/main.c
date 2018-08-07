@@ -138,6 +138,7 @@ int main(int argc, char * const argv[]) {
 	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
+	int numlines = 0;
 	const char *lastsep = FMT_SEP;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 4, &triggered, 1, &timeout)) {
 		/* Is the child done? */
@@ -176,23 +177,26 @@ int main(int argc, char * const argv[]) {
 				if (!first) {
 					if (nl) {
 						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
+
+						/* Update running statistics */
+						if (timespec_compare(&diff, &max) > 0) {
+							max = diff;
+						}
+
+						/* Update the start-of-line timestamp we'll diff against */
+						last = now;
+						numlines++;
 					} else if (wrap) {
 						printf("%*s%s", TS_WIDTH, "", lastsep);
 					}
 
 					printf("\n");
+				} else {
+					numlines++;
 				}
 				lb_reset(lb);
-
-				/* Update running statistics */
-				if (timespec_compare(&diff, &max) > 0) {
-					max = diff;
-				}
-
-				/* Update the start-of-line timestamp we'll diff against */
-				last = now;
 				first = false;
-		}
+			}
 
 			/* Read the triggering event */
 			nl = lb_read(lb, fd);
@@ -220,7 +224,7 @@ done:
 
 	/* Final statistics */
 	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("Total: %6lu.%06lu\n", diff.tv_sec, diff.tv_nsec / NSEC_PER_USEC);
+	printf("Total: %6lu.%06lu across %u lines\n", diff.tv_sec, diff.tv_nsec / NSEC_PER_USEC, numlines);
 	printf("Max:   %6lu.%06lu\n", max.tv_sec, max.tv_nsec / NSEC_PER_USEC);
 	return EX_OK;
 }
