@@ -5,6 +5,8 @@ SRCS=     src/main.c src/time.c src/linebuffer.c src/pipe.c
 OBJS=     $(SRCS:.c=.o)
 PREFIX?=  /usr/local
 DESTDIR?= /
+SECTION=  1
+MANPAGE=  docs/$(PROGNAME).$(SECTION)
 
 $(PROGNAME): $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROGNAME) $(OBJS)
@@ -14,6 +16,7 @@ linux:
 
 install: $(PROGNAME)
 	install -m 0755 $(PROGNAME) $(DESTDIR)/$(PREFIX)/bin
+	install -m 0644 $(MANPAGE) $(DESTDIR)/$(PREFIX)/share/man/man$(SECTION)
 
 clean: 
 	rm -f $(PROGNAME) $(OBJS)
