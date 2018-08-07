@@ -223,8 +223,8 @@ done:
 	printf("\n");
 
 	/* Final statistics */
-	const struct timespec diff = timespec_subtract(&now, &start);
-	printf("Total: %6lu.%06lu across %u lines\n", diff.tv_sec, diff.tv_nsec / NSEC_PER_USEC, numlines);
+	const struct timespec total = timespec_subtract(&now, &start);
+	printf("Total: %6lu.%06lu across %u lines\n", total.tv_sec, total.tv_nsec / NSEC_PER_USEC, numlines);
 	printf("Max:   %6lu.%06lu\n", max.tv_sec, max.tv_nsec / NSEC_PER_USEC);
 	return EX_OK;
 }
