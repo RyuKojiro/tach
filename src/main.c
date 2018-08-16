@@ -44,8 +44,9 @@
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
 #define COLOR_ERR     "\x1b[30;101m"
+#define COLOR_FAST    "\x1b[90m"
 
-#define FMT_TS        COLOR_RESET "%8ld.%03ld"
+#define FMT_TS        "%8ld.%03ld"
 #define FMT_SEP       COLOR_RESET " " COLOR_SEP " " COLOR_RESET " "
 #define FMT_SEP_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
@@ -176,6 +177,9 @@ int main(int argc, char * const argv[]) {
 			if (nl || wrap) {
 				if (!first) {
 					if (nl) {
+						if(diff.tv_sec == 0 && diff.tv_nsec <= 1000000) {
+							printf(COLOR_FAST);
+						}
 						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
 
 						/* Update running statistics */
@@ -209,7 +213,7 @@ int main(int argc, char * const argv[]) {
 			 * spanning ~3.17 years of runtime to not have problems
 			 * with running out of timestamp columns.
 			 */
-			printf(FMT_TS "%s\r", ARG_TS(diff), sep);
+			printf(COLOR_RESET FMT_TS "%s\r", ARG_TS(diff), sep);
 		}
 		fflush(stdout);
 
