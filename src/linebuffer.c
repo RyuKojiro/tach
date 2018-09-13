@@ -53,6 +53,16 @@ void lb_reset(struct linebuffer *line) {
 }
 
 bool lb_read(struct linebuffer *line, int fd) {
+	/*
+	 * If the previous line was terminated by a carriage return, reposition at
+	 * the beginning of the linebuffer.
+	 */
+	if(line->cr) {
+		line->cur = 0;
+		line->buf[0] = '\0';
+		line->cr = false;
+	}
+
 	char *now = line->buf + line->cur;
 	bool newline = false;
 
@@ -67,15 +77,23 @@ bool lb_read(struct linebuffer *line, int fd) {
 		now[cur] = '\0';
 	}
 
-	char *nl = strchr(now, '\n');
+	char *nl = strpbrk(now, "\n\r");
 	if (nl) {
+		switch (*nl) {
+			case '\n': {
+				newline = true;
+			} break;
+			case '\r': {
+				line->cr = true;
+			} break;
+		}
+
 		/*
 		 * If there is a newline and it's at the tail end, chop it off.
 		 * If it's not the tail end, then split the buffer, hold onto the
 		 * latter half, and return the first half.
 		 */
 		*nl = '\0';
-		newline = true;
 
 		if (nl - now != cur - 1) {
 			line->tmp = strdup(nl+1);
