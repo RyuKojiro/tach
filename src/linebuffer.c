@@ -66,6 +66,10 @@ bool lb_read(struct linebuffer *line, int fd) {
 	char *now = line->buf + line->cur;
 	bool newline = false;
 
+	/*
+	 * If there is a tmp string buffered up from a previous read, use that,
+	 * otherwise actually read from the file descriptor.
+	 */
 	ssize_t cur;
 	if (line->tmp) {
 		cur = (ssize_t)strlen(line->tmp);
@@ -77,6 +81,11 @@ bool lb_read(struct linebuffer *line, int fd) {
 		now[cur] = '\0';
 	}
 
+	/*
+	 * Don't allow reading of more than a single "line" per call. If we read
+	 * too much, split the line in two, and put the remainder in a buffer for
+	 * the next caller to get.
+	 */
 	char *nl = strpbrk(now, "\n\r");
 	if (nl) {
 		switch (*nl) {
