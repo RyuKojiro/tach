@@ -22,15 +22,23 @@
 
 #include "linebuffer.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+void _lb_sanitycheck(struct linebuffer *lb) {
+	/* Ensure buf is either NULL, or NULL terminated */
+	assert((lb->buf == NULL) || (lb->buf[lb->cur] == '\0'));
+}
 
 struct linebuffer *lb_create(void) {
 	return calloc(sizeof(struct linebuffer), 1);
 }
 
 void lb_destroy(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	if (line->buf) {
 		free(line->buf);
 	}
@@ -48,14 +56,32 @@ void lb_resize(struct linebuffer *line, size_t size) {
 }
 
 void lb_reset(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	memset(line->buf, 0, line->len + 1);
 	line->cur = 0;
 }
 
 bool lb_read(struct linebuffer *line, int fd) {
+	_lb_sanitycheck(line);
+
+	/*
+	 * If the previous line was terminated by a carriage return, reposition at
+	 * the beginning of the linebuffer.
+	 */
+	if(line->cr) {
+		line->cur = 0;
+		line->buf[0] = '\0';
+		line->cr = false;
+	}
+
 	char *now = line->buf + line->cur;
 	bool newline = false;
 
+	/*
+	 * If there is a tmp string buffered up from a previous read, use that,
+	 * otherwise actually read from the file descriptor.
+	 */
 	ssize_t cur;
 	if (line->tmp) {
 		cur = (ssize_t)strlen(line->tmp);
@@ -64,18 +90,39 @@ bool lb_read(struct linebuffer *line, int fd) {
 		line->tmp = NULL;
 	} else {
 		cur = read(fd, now, line->len - line->cur);
-		now[cur] = '\0';
 	}
 
-	char *nl = strchr(now, '\n');
+	/*
+	 * NULL terminate the buffer, regardless of where it came from.
+	 * Technically, this makes the line buffer diverge from the screen contents
+	 * whenever there is a carriage return followed by a shorter line. However,
+	 * due to the fact that we will only end up printing up to the NULL
+	 * terminator, the results will be visually identical.
+	 */
+	now[cur] = '\0';
+
+	/*
+	 * Don't allow reading of more than a single "line" per call. If we read
+	 * too much, split the line in two, and put the remainder in a buffer for
+	 * the next caller to get.
+	 */
+	char *nl = strpbrk(now, "\n\r");
 	if (nl) {
+		switch (*nl) {
+			case '\n': {
+				newline = true;
+			} break;
+			case '\r': {
+				line->cr = true;
+			} break;
+		}
+
 		/*
 		 * If there is a newline and it's at the tail end, chop it off.
 		 * If it's not the tail end, then split the buffer, hold onto the
 		 * latter half, and return the first half.
 		 */
 		*nl = '\0';
-		newline = true;
 
 		if (nl - now != cur - 1) {
 			line->tmp = strdup(nl+1);
@@ -87,9 +134,12 @@ bool lb_read(struct linebuffer *line, int fd) {
 
 	line->cur += (size_t)cur;
 
+	_lb_sanitycheck(line);
 	return newline;
 }
 
 bool lb_full(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	return line->cur == line->len;
 }
