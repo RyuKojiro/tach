@@ -22,15 +22,23 @@
 
 #include "linebuffer.h"
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+void _lb_sanitycheck(struct linebuffer *lb) {
+	/* Ensure buf is either NULL, or NULL terminated */
+	assert((lb->buf == NULL) || (lb->buf[lb->cur] == '\0'));
+}
 
 struct linebuffer *lb_create(void) {
 	return calloc(sizeof(struct linebuffer), 1);
 }
 
 void lb_destroy(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	if (line->buf) {
 		free(line->buf);
 	}
@@ -48,11 +56,15 @@ void lb_resize(struct linebuffer *line, size_t size) {
 }
 
 void lb_reset(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	memset(line->buf, 0, line->len + 1);
 	line->cur = 0;
 }
 
 bool lb_read(struct linebuffer *line, int fd) {
+	_lb_sanitycheck(line);
+
 	/*
 	 * If the previous line was terminated by a carriage return, reposition at
 	 * the beginning of the linebuffer.
@@ -122,9 +134,12 @@ bool lb_read(struct linebuffer *line, int fd) {
 
 	line->cur += (size_t)cur;
 
+	_lb_sanitycheck(line);
 	return newline;
 }
 
 bool lb_full(struct linebuffer *line) {
+	_lb_sanitycheck(line);
+
 	return line->cur == line->len;
 }
