@@ -30,7 +30,7 @@ struct linebuffer {
 	size_t len;
 	/** The current string length. */
 	size_t cur;
-	/** A temporary holding buffer for reads that span a newline */
+	/** A temporary holding buffer for reads that span a newline, also NULL terminated */
 	char *tmp;
 	/** This flag indicates if the preceding line was terminated by a carriage
 	 *  return. If this flag is set, the next lb_read will overwrite the
