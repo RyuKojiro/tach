@@ -78,8 +78,16 @@ bool lb_read(struct linebuffer *line, int fd) {
 		line->tmp = NULL;
 	} else {
 		cur = read(fd, now, line->len - line->cur);
-		now[cur] = '\0';
 	}
+
+	/*
+	 * NULL terminate the buffer, regardless of where it came from.
+	 * Technically, this makes the line buffer diverge from the screen contents
+	 * whenever there is a carriage return followed by a shorter line. However,
+	 * due to the fact that we will only end up printing up to the NULL
+	 * terminator, the results will be visually identical.
+	 */
+	now[cur] = '\0';
 
 	/*
 	 * Don't allow reading of more than a single "line" per call. If we read
