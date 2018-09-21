@@ -175,7 +175,16 @@ int main(int argc, char * const argv[]) {
 
 			/* Finalize the previous line and advance */
 			if (nl || wrap) {
-				if (!first) {
+				if (first) {
+					/*
+					 * Line number 0 is the lead up to the first line, it is
+					 * ignored and discarded to avoid ending up with a time
+					 * calumn that is always guaranteed to result in a blank
+					 * line at the beginning of every tach invocation.
+					 */
+					numlines++;
+					first = false;
+				} else {
 					if (nl) {
 						if(diff.tv_sec == 0 && diff.tv_nsec <= 1000000) {
 							printf(COLOR_FAST);
@@ -195,15 +204,6 @@ int main(int argc, char * const argv[]) {
 					}
 
 					printf("\n");
-				} else {
-					/*
-					 * Line number 0 is the lead up to the first line, it is
-					 * ignored and discarded to avoid ending up with a time
-					 * calumn that is always guaranteed to result in a blank
-					 * line at the beginning of every tach invocation.
-					 */
-					numlines++;
-					first = false;
 				}
 
 				/* We have successfully flushed this line to the terminal */
