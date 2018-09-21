@@ -27,7 +27,6 @@ struct descriptors {
 	int err;
 };
 
-
 /**
  * fork, exec, and connect the stdout and stderr of a specified child
  * executable, with specified arguments.
