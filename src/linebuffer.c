@@ -62,6 +62,7 @@ void lb_reset(struct linebuffer *line) {
 
 bool lb_read(struct linebuffer *line, int fd) {
 	_lb_sanitycheck(line);
+	assert(line->buf);
 
 	/*
 	 * If the previous line was terminated by a carriage return, reposition at
