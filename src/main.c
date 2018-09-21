@@ -196,10 +196,18 @@ int main(int argc, char * const argv[]) {
 
 					printf("\n");
 				} else {
+					/*
+					 * Line number 0 is the lead up to the first line, it is
+					 * ignored and discarded to avoid ending up with a time
+					 * calumn that is always guaranteed to result in a blank
+					 * line at the beginning of every tach invocation.
+					 */
 					numlines++;
+					first = false;
 				}
+
+				/* We have successfully flushed this line to the terminal */
 				lb_reset(lb);
-				first = false;
 			}
 
 			/* Read the triggering event */
