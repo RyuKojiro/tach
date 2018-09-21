@@ -56,8 +56,6 @@ void lb_resize(struct linebuffer *line, size_t size) {
 }
 
 void lb_reset(struct linebuffer *line) {
-	_lb_sanitycheck(line);
-
 	memset(line->buf, 0, line->len + 1);
 	line->cur = 0;
 }
