@@ -28,8 +28,11 @@
 #include <unistd.h>
 
 void _lb_sanitycheck(struct linebuffer *lb) {
-	/* Ensure buf is either NULL, or NULL terminated */
-	assert((lb->buf == NULL) || (lb->buf[lb->cur] == '\0'));
+	/* Ensure buffer has been allocated */
+	assert(lb->buf);
+
+	/* Ensure buf is NULL terminated */
+	assert(lb->buf[lb->cur] == '\0');
 }
 
 struct linebuffer *lb_create(void) {
@@ -62,7 +65,6 @@ void lb_reset(struct linebuffer *line) {
 
 bool lb_read(struct linebuffer *line, int fd) {
 	_lb_sanitycheck(line);
-	assert(line->buf);
 
 	/*
 	 * If the previous line was terminated by a carriage return, reposition at
