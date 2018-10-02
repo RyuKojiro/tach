@@ -27,6 +27,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#if DTRACE
+#include "probes.h"
+#endif
+
 void _lb_sanitycheck(struct linebuffer *lb) {
 	/* Ensure buffer has been allocated */
 	assert(lb->buf);
@@ -64,6 +68,7 @@ void lb_reset(struct linebuffer *line) {
 }
 
 bool lb_read(struct linebuffer *line, int fd) {
+	TACH_LB_READ(line, fd);
 	_lb_sanitycheck(line);
 
 	/*
