@@ -192,7 +192,7 @@ int main(int argc, char * const argv[]) {
 						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
 
 						/* Update running statistics */
-						if (timespec_compare(&diff, &max) > 0) {
+						if (timespec_compare(&diff, &max)) {
 							max = diff;
 						}
 
