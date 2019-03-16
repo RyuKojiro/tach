@@ -192,7 +192,7 @@ int main(int argc, char * const argv[]) {
 						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
 
 						/* Update running statistics */
-						if (timespec_compare(&diff, &max) > 0) {
+						if (timespec_compare(&diff, &max)) {
 							max = diff;
 						}
 
@@ -230,6 +230,10 @@ int main(int argc, char * const argv[]) {
 	}
 
 done:
+	/* Final timestamp, just in case we spent time waiting on a signal or EOF */
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	/* Cleanup */
 	lb_destroy(lb_stdout);
 	lb_destroy(lb_stderr);
 	printf("\n");

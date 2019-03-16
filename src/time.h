@@ -27,7 +27,7 @@
 #define NSEC_PER_MSEC (1000000L)
 #define NSEC_PER_SEC  (1000000000L)
 
-/* Returns true if a > b, otherwise false. */
+/* Returns true if a >= b, otherwise false. */
 bool timespec_compare(const struct timespec *a, const struct timespec *b);
 
 /*
