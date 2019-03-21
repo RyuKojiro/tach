@@ -27,7 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 
-void _lb_sanitycheck(struct linebuffer *lb) {
+static void _lb_sanitycheck(struct linebuffer *lb) {
 	/* Ensure buffer has been allocated */
 	assert(lb->buf);
 
