@@ -168,11 +168,6 @@ int main(int argc, char * const argv[]) {
 		if (nev) { /* There is only one event at a time */
 			struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
 
-			/* Is the child done? */
-			if (triggered.flags & EV_EOF) {
-				break;
-			}
-
 			/* Finalize the previous line and advance */
 			if (nl || wrap) {
 				if (first) {
