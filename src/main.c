@@ -162,8 +162,8 @@ int main(int argc, char * const argv[]) {
 		}
 
 		/* Did the child exit? */
-		if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT ) {
-			        break;
+		if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
+			break;
 		}
 
 		/* Get the timestamp of this output, and calculate the offset */
