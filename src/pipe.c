@@ -63,7 +63,7 @@ static void mkpipe(int fds[2], bool usepty) {
 	}
 }
 
-struct descriptors spawn(char * const argv[], bool usepty) {
+struct descendent spawn(char * const argv[], bool usepty) {
 	/* Setup stdout and stderr pipes */
 	int stdout_pair[2];
 	int stderr_pair[2];
@@ -81,7 +81,8 @@ struct descriptors spawn(char * const argv[], bool usepty) {
 	 *  child_stdout        stdout
 	 *  child_stderr        stderr
 	 */
-	switch (vfork()) {
+	const pid_t pid = vfork();
+	switch (pid) {
 		case -1: { /* error */
 			err(EX_OSERR, "vfork");
 		}
@@ -94,7 +95,8 @@ struct descriptors spawn(char * const argv[], bool usepty) {
 		}
 	}
 
-	struct descriptors result = {
+	const struct descendent result = {
+		.pid = pid,
 		.out = stdout_pair[PIPE_OUT],
 		.err = stderr_pair[PIPE_OUT],
 	};
