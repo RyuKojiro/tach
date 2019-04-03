@@ -103,9 +103,10 @@ int main(int argc, char * const argv[]) {
 	const struct descendent child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
-	struct kevent ev[4];
+	struct kevent ev[5];
 	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	EV_SET(ev + 2, child.pid, EVFILT_PROC, EV_ADD | EV_ENABLE, 0, 0, NULL);
 
 	const int kq = kqueue();
 	if (kq == -1) {
@@ -123,7 +124,7 @@ int main(int argc, char * const argv[]) {
 
 	/* Set up terminal width info tracking */
 	winch(lb_stdout, lb_stderr);
-	EV_SET(ev + 2, SIGWINCH, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+	EV_SET(ev + 3, SIGWINCH, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
 	/*
 	 * Catch SIGINT to make sure we get a chance to print final stats.
@@ -131,7 +132,7 @@ int main(int argc, char * const argv[]) {
 	 * terminate the process before ever getting to the kqueue.
 	 */
 	signal(SIGINT, SIG_IGN);
-	EV_SET(ev + 3, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+	EV_SET(ev + 4, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
 	/* The main kevent loop */
 	bool wrap = false;
@@ -141,7 +142,7 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	int numlines = 0;
 	const char *lastsep = FMT_SEP;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 4, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 5, &triggered, 1, &timeout)) {
 		/* Is the child done? */
 		if (triggered.flags & EV_EOF) {
 			break;
@@ -156,6 +157,11 @@ int main(int argc, char * const argv[]) {
 				case SIGINT:
 					goto done;
 			}
+		}
+
+		/* Did the child exit? */
+		if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT ) {
+			        break;
 		}
 
 		/* Get the timestamp of this output, and calculate the offset */
