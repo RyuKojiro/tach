@@ -21,8 +21,10 @@
  */
 
 #include <stdbool.h>
+#include <unistd.h>
 
-struct descriptors {
+struct descendent {
+	pid_t pid;
 	int out;
 	int err;
 };
@@ -31,4 +33,4 @@ struct descriptors {
  * fork, exec, and connect the stdout and stderr of a specified child
  * executable, with specified arguments.
  */
-struct descriptors spawn(char * const argv[], bool usepty);
+struct descendent spawn(char * const argv[], bool usepty);

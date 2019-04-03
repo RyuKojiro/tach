@@ -100,7 +100,7 @@ int main(int argc, char * const argv[]) {
 	}
 
 	/* Spawn the child and hook the pipes up */
-	const struct descriptors child = spawn(argv, usepty);
+	const struct descendent child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
 	struct kevent ev[4];
