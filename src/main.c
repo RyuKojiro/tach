@@ -51,6 +51,8 @@
 #define FMT_SEP_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
 #define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
+#define EVENT_COUNT   (5)
+
 /* Timer display refresh rate */
 static const struct timespec timeout = {
 	.tv_nsec = 17 * NSEC_PER_MSEC, /* ~60 Hz */
@@ -103,7 +105,7 @@ int main(int argc, char * const argv[]) {
 	const struct descendent child = spawn(argv, usepty);
 
 	/* Get everything ready for kqueue */
-	struct kevent ev[5];
+	struct kevent ev[EVENT_COUNT];
 	EV_SET(ev + 0, child.out, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	EV_SET(ev + 1, child.err, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	EV_SET(ev + 2, child.pid, EVFILT_PROC, EV_ADD | EV_ENABLE, 0, 0, NULL);
@@ -142,7 +144,7 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	int numlines = 0;
 	const char *lastsep = FMT_SEP;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, 5, &triggered, 1, &timeout)) {
+	for (int nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
 		/* Is the child done? */
 		if (triggered.flags & EV_EOF) {
 			break;
