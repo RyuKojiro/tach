@@ -63,7 +63,7 @@ void lb_reset(struct linebuffer *line) {
 	line->cur = 0;
 }
 
-bool lb_read(struct linebuffer *line, int fd) {
+bool lb_read(struct linebuffer *line, int fd, bool *newline) {
 	_lb_sanitycheck(line);
 
 	/*
@@ -77,7 +77,7 @@ bool lb_read(struct linebuffer *line, int fd) {
 	}
 
 	char *now = line->buf + line->cur;
-	bool newline = false;
+	*newline = false;
 
 	/*
 	 * If there is a tmp string buffered up from a previous read, use that,
@@ -91,6 +91,11 @@ bool lb_read(struct linebuffer *line, int fd) {
 		line->tmp = NULL;
 	} else {
 		cur = read(fd, now, line->len - line->cur);
+
+		/* Bubble read errors up to the caller */
+		if (cur <= 0) {
+			return false;
+		}
 	}
 
 	/*
@@ -111,7 +116,7 @@ bool lb_read(struct linebuffer *line, int fd) {
 	if (nl) {
 		switch (*nl) {
 			case '\n': {
-				newline = true;
+				*newline = true;
 			} break;
 			case '\r': {
 				line->cr = true;
@@ -136,7 +141,7 @@ bool lb_read(struct linebuffer *line, int fd) {
 	line->cur += (size_t)cur;
 
 	_lb_sanitycheck(line);
-	return newline;
+	return true;
 }
 
 bool lb_full(struct linebuffer *line) {

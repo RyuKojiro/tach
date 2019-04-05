@@ -46,6 +46,7 @@ bool lb_full(struct linebuffer *line);
 
 /*
  * Like getline(3), but rather than including the newline it simply returns a
- * boolean indicating the presence of the newline.
+ * boolean, via an out pointer, that indicates the presence of the newline.
+ * The return value indicates whether or not read(2) was successful.
  */
-bool lb_read(struct linebuffer *line, int fd);
+bool lb_read(struct linebuffer *line, int fd, bool *newline);

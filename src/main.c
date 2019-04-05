@@ -214,7 +214,9 @@ int main(int argc, char * const argv[]) {
 			}
 
 			/* Read the triggering event */
-			nl = lb_read(lb, fd);
+			if(!lb_read(lb, fd, &nl)) {
+				err(EX_IOERR, "read");
+			}
 			wrap = lb_full(lb);
 
 			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
