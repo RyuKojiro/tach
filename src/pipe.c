@@ -22,6 +22,7 @@
 
 #include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sysexits.h>
 #include <unistd.h>
 
@@ -63,6 +64,13 @@ static void mkpipe(int fds[2], bool usepty) {
 	}
 }
 
+static void cloexec(int fd) {
+	int flags = fcntl(fd, F_GETFD);
+	if(fcntl(fd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+		err(EX_OSERR, "fcntl");
+	}
+}
+
 struct descendent spawn(char * const argv[], bool usepty) {
 	/* Setup stdout and stderr pipes */
 	int stdout_pair[2];
@@ -71,6 +79,12 @@ struct descendent spawn(char * const argv[], bool usepty) {
 	/* Create whichever pipe type is appropriate */
 	mkpipe(stdout_pair, usepty);
 	mkpipe(stderr_pair, usepty);
+
+	/* Create a close-on-exec pipe pair for communicating the exec outcome */
+	int exec_pair[2];
+	mkpipe(exec_pair, false);
+	cloexec(exec_pair[PIPE_IN]);
+	cloexec(exec_pair[PIPE_OUT]);
 
 	/*
 	 *  Fork and connect the pipes to the child process
@@ -91,16 +105,29 @@ struct descendent spawn(char * const argv[], bool usepty) {
 			become(stderr_pair, STDERR_FILENO);
 
 			execvp(argv[0], argv);
+
+			/* exec failed */
+			write(exec_pair[PIPE_IN], &errno, sizeof(int));
 			err(EX_OSERR, "execv");
 		}
 	}
 
+	/* Check that the exec pipe was closed, indicating success */
+	int rc;
+	close(exec_pair[PIPE_IN]);
+	if(read(exec_pair[PIPE_OUT], &rc, sizeof(int)) > 0) {
+		errc(EX_OSERR, rc, NULL);
+	}
+	close(exec_pair[PIPE_OUT]);
+
+	/* Prepare the return value */
 	const struct descendent result = {
 		.pid = pid,
 		.out = stdout_pair[PIPE_OUT],
 		.err = stderr_pair[PIPE_OUT],
 	};
 
+	/* Close the parent-side input pipes. Communication is unidirectional */
 	close(stdout_pair[PIPE_IN]);
 	close(stderr_pair[PIPE_IN]);
 
