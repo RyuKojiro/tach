@@ -121,7 +121,8 @@ struct descendent spawn(char * const argv[], bool usepty) {
 	/* Check that the exec pipe was closed, indicating success */
 	int rc;
 	if(read(exec_pair[PIPE_OUT], &rc, sizeof(int)) > 0) {
-		errc(EX_OSERR, rc, NULL);
+		errno = rc;
+		err(EX_OSERR, NULL);
 	}
 	close(exec_pair[PIPE_OUT]);
 
