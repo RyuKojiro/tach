@@ -112,9 +112,14 @@ struct descendent spawn(char * const argv[], bool usepty) {
 		}
 	}
 
+	/*
+	 * The parent must close its exec_pair[PIPE_IN] to make sure the child's
+	 * dup is the only one PIPE_IN side remaining.
+	 */
+	close(exec_pair[PIPE_IN]);
+
 	/* Check that the exec pipe was closed, indicating success */
 	int rc;
-	close(exec_pair[PIPE_IN]);
 	if(read(exec_pair[PIPE_OUT], &rc, sizeof(int)) > 0) {
 		errc(EX_OSERR, rc, NULL);
 	}
