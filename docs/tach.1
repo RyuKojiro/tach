@@ -27,5 +27,14 @@ By default,
 is used.
 .El
 .Pp
+.Sh CAVEATS
+.Nm
+does not interpret escape codes, they are passed through to the terminal containing
+.Nm .
+Escape codes that manipulate horizontal positioning may break out of the pty.
+.Pp
+.Nm
+is line buffered, and the buffer is as large as the width of the pty used to contain the child process.
+In rare cases a child process might emit escape sequences that span the end of the line buffer, causing them to become mangled by the left-hand side timestamp.
 .Sh SEE ALSO
 .Xr time 1
