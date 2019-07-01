@@ -23,23 +23,16 @@
 #include <err.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <sysexits.h>
 #include <unistd.h>
-
-#if __FreeBSD__
-#include <libutil.h>
-#elif __linux__
-#include <pty.h>
-#else
-#include <util.h>
-#endif
 
 #include "pipe.h"
 
 /*
- * pipe(2) and openpty(3) create descriptor pairs where the 0 index is the
- * output, and the 1 index is the input. Rather than hardcode these indexes
- * everywhere, let's use named indices.
+ * mkpipe creates a descriptor pair where the 0 index is the output, and the 1
+ * index is the input, ala pipe(2). Rather than hardcode these indices
+ * everywhere, let's give them names.
  */
 enum {
 	PIPE_OUT,
@@ -54,8 +47,25 @@ static void become(int fds[], int target) {
 
 static void mkpipe(int fds[2], bool usepty) {
 	if (usepty) {
-		if(openpty(&fds[PIPE_OUT], &fds[PIPE_IN], NULL, NULL, NULL)) {
-			err(EX_OSERR, "openpty");
+		if ((fds[PIPE_OUT] = posix_openpt(O_RDWR|O_NOCTTY)) < 0) {
+			err(EX_OSERR, "posix_openpt");
+		}
+
+		if (grantpt(fds[PIPE_OUT])) {
+			err(EX_OSERR, "grantpt");
+		}
+
+		if (unlockpt(fds[PIPE_OUT])) {
+			err(EX_OSERR, "unlockpt");
+		}
+
+		char *slave;
+		if(!(slave = ptsname(fds[PIPE_OUT]))) {
+			err(EX_OSERR, "ptsname");
+		}
+
+		if((fds[PIPE_IN] = open(slave, O_RDWR|O_NOCTTY)) < 0) {
+			err(EX_OSERR, "open");
 		}
 	} else {
 		if(pipe(fds) == -1) {
