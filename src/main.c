@@ -38,18 +38,23 @@
 #include "time.h"
 #include "pipe.h"
 
+/*
+ * 8 digits on the left-hand-side will allow for a process
+ * spanning ~3.17 years of runtime to not have problems
+ * with running out of timestamp columns.
+ */
+#define TS_FMT        "%8ld.%03ld"
 #define TS_WIDTH      (8 + 1 + 3) /* sec + '.' + nsec */
+#define TS_ARG(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
+
 #define SEP_WIDTH     (3) /* " | " */
+#define SEP_FMT       COLOR_RESET " " COLOR_SEP " " COLOR_RESET " "
+#define SEP_FMT_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
 
 #define COLOR_RESET   "\x1b[0m"
 #define COLOR_SEP     "\x1b[30;47m"
 #define COLOR_ERR     "\x1b[30;101m"
 #define COLOR_FAST    "\x1b[90m"
-
-#define FMT_TS        "%8ld.%03ld"
-#define FMT_SEP       COLOR_RESET " " COLOR_SEP " " COLOR_RESET " "
-#define FMT_SEP_ERR   COLOR_RESET " " COLOR_ERR " " COLOR_RESET " "
-#define ARG_TS(ts)    ts.tv_sec, (ts.tv_nsec / NSEC_PER_MSEC)
 
 #define EVENT_COUNT   (5)
 
@@ -143,7 +148,7 @@ int main(int argc, char * const argv[]) {
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	int numlines = 0;
-	const char *lastsep = FMT_SEP;
+	const char *lastsep = SEP_FMT;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
 		/* Is the child done? */
 		if (triggered.flags & EV_EOF) {
@@ -172,7 +177,7 @@ int main(int argc, char * const argv[]) {
 
 		/* Handle the event */
 		const int fd = (int)triggered.ident;
-		const char *sep = (fd == child.out ? FMT_SEP : FMT_SEP_ERR);
+		const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
 		if (nev) { /* There is only one event at a time */
 			struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
 
@@ -193,7 +198,7 @@ int main(int argc, char * const argv[]) {
 						if(diff.tv_sec == 0 && diff.tv_nsec <= 1000000) {
 							printf(COLOR_FAST);
 						}
-						printf(FMT_TS "%s", ARG_TS(diff), lastsep);
+						printf(TS_FMT "%s", TS_ARG(diff), lastsep);
 
 						/* Update running statistics */
 						if (timespec_compare(&diff, &max)) {
@@ -223,12 +228,8 @@ int main(int argc, char * const argv[]) {
 
 			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
 		} else if (!first && !slow) {
-			/*
-			 * 8 digits on the left-hand-side will allow for a process
-			 * spanning ~3.17 years of runtime to not have problems
-			 * with running out of timestamp columns.
-			 */
-			printf(COLOR_RESET FMT_TS "%s\r", ARG_TS(diff), sep);
+			/* Normal idle timestamp update */
+			printf(COLOR_RESET TS_FMT "%s\r", TS_ARG(diff), sep);
 		}
 		fflush(stdout);
 
