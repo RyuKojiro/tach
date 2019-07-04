@@ -189,6 +189,7 @@ int main(int argc, char * const argv[]) {
 					first = false;
 				} else {
 					if (nl) {
+						/* Print the final timestamp for this line */
 						if(diff.tv_sec == 0 && diff.tv_nsec <= 1000000) {
 							printf(COLOR_FAST);
 						}
@@ -203,6 +204,7 @@ int main(int argc, char * const argv[]) {
 						last = now;
 						numlines++;
 					} else if (wrap) {
+						/* Blank out the timestamp for this line, since it wraps */
 						printf("%*s%s", TS_WIDTH, "", lastsep);
 					}
 
