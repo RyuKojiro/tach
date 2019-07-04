@@ -226,7 +226,7 @@ int main(int argc, char * const argv[]) {
 			}
 			wrap = lb_full(lb);
 
-			printf("%*s%s%s\r", TS_WIDTH, "", sep, lb->buf);
+			printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
 		} else if (!first && !slow) {
 			/* Normal idle timestamp update */
 			printf(COLOR_RESET TS_FMT "%s\r", TS_ARG(diff), sep);
