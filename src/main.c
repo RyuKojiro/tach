@@ -150,27 +150,6 @@ int main(int argc, char * const argv[]) {
 	int numlines = 0;
 	const char *lastsep = SEP_FMT;
 	for (int nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
-		/* Is the child done? */
-		if (triggered.flags & EV_EOF) {
-			break;
-		}
-
-		/* Did we get a signal? */
-		if (triggered.filter == EVFILT_SIGNAL) {
-			switch (triggered.ident) {
-				case SIGWINCH:
-					winch(lb_stdout, lb_stderr);
-					continue;
-				case SIGINT:
-					goto done;
-			}
-		}
-
-		/* Did the child exit? */
-		if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
-			break;
-		}
-
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
@@ -180,6 +159,27 @@ int main(int argc, char * const argv[]) {
 		 * The triggered structure shall not be accessed outside this block.
 		 */
 		if (nev) {
+			/* Is the child done? */
+			if (triggered.flags & EV_EOF) {
+				break;
+			}
+
+			/* Did we get a signal? */
+			if (triggered.filter == EVFILT_SIGNAL) {
+				switch (triggered.ident) {
+					case SIGWINCH:
+						winch(lb_stdout, lb_stderr);
+						continue;
+					case SIGINT:
+						goto done;
+				}
+			}
+
+			/* Did the child exit? */
+			if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
+				break;
+			}
+
 			/* Figure out which fd it is, and assign the fd-specific variables */
 			const int fd = (int)triggered.ident;
 			const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
