@@ -149,36 +149,41 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	int numlines = 0;
 	const char *lastsep = SEP_FMT;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
-		/* Is the child done? */
-		if (triggered.flags & EV_EOF) {
-			break;
-		}
-
-		/* Did we get a signal? */
-		if (triggered.filter == EVFILT_SIGNAL) {
-			switch (triggered.ident) {
-				case SIGWINCH:
-					winch(lb_stdout, lb_stderr);
-					continue;
-				case SIGINT:
-					goto done;
-			}
-		}
-
-		/* Did the child exit? */
-		if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
-			break;
-		}
-
+	int nev;
+	for (nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
 
-		/* Handle the event */
-		const int fd = (int)triggered.ident;
-		const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
-		if (nev) { /* There is only one event at a time */
+		/*
+		 * Handle the triggering event.
+		 * The triggered structure shall not be accessed outside this block.
+		 */
+		if (nev) {
+			/* Is the child done? */
+			if (triggered.flags & EV_EOF) {
+				break;
+			}
+
+			/* Did we get a signal? */
+			if (triggered.filter == EVFILT_SIGNAL) {
+				switch (triggered.ident) {
+					case SIGWINCH:
+						winch(lb_stdout, lb_stderr);
+						continue;
+					case SIGINT:
+						goto done;
+				}
+			}
+
+			/* Did the child exit? */
+			if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
+				break;
+			}
+
+			/* Figure out which fd it is, and assign the fd-specific variables */
+			const int fd = (int)triggered.ident;
+			const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
 			struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
 
 			/* Finalize the previous line and advance */
@@ -226,15 +231,21 @@ int main(int argc, char * const argv[]) {
 			}
 			wrap = lb_full(lb);
 
+			/* Normal idle timestamp update + linebuffer update */
 			printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
+
+			/* Store this separator for blanking out before the newline */
+			lastsep = sep;
 		} else if (!first && !slow) {
 			/* Normal idle timestamp update */
-			printf(TS_FMT "%s\r", TS_ARG(diff), sep);
+			printf(TS_FMT "\r", TS_ARG(diff));
 		}
 		fflush(stdout);
+	}
 
-		/* Store this separator for blanking out before the newline */
-		lastsep = sep;
+	/* Did we exit the loop because of a kevent error? */
+	if (nev == -1) {
+		err(EX_IOERR, "kevent");
 	}
 
 done:
