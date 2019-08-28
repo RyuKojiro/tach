@@ -149,7 +149,8 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	int numlines = 0;
 	const char *lastsep = SEP_FMT;
-	for (int nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
+	int nev;
+	for (nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
@@ -240,6 +241,11 @@ int main(int argc, char * const argv[]) {
 			printf(TS_FMT "\r", TS_ARG(diff));
 		}
 		fflush(stdout);
+	}
+
+	/* Did we exit the loop because of a kevent error? */
+	if (nev == -1) {
+		err(EX_IOERR, "kevent");
 	}
 
 done:
