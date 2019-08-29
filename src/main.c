@@ -141,6 +141,12 @@ int main(int argc, char * const argv[]) {
 	signal(SIGINT, SIG_IGN);
 	EV_SET(ev + 4, SIGINT, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
+	/* Set the events to listen for */
+	int nev = kevent(kq, ev, EVENT_COUNT, NULL, 0, NULL);
+	if (nev == -1) {
+		err(EX_IOERR, "kevent (set)");
+	}
+
 	/* The main kevent loop */
 	bool wrap = false;
 	bool nl = true;
@@ -149,8 +155,7 @@ int main(int argc, char * const argv[]) {
 	struct timespec now, max = {0,0};
 	int numlines = 0;
 	const char *lastsep = SEP_FMT;
-	int nev;
-	for (nev = 0; nev != -1; nev = kevent(kq, ev, EVENT_COUNT, &triggered, 1, &timeout)) {
+	for (nev = 0; nev != -1; nev = kevent(kq, NULL, 0, &triggered, 1, &timeout)) {
 		/* Get the timestamp of this output, and calculate the offset */
 		clock_gettime(CLOCK_MONOTONIC, &now);
 		const struct timespec diff = timespec_subtract(&now, &last);
