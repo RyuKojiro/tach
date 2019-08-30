@@ -105,10 +105,10 @@ struct descendent spawn(char * const argv[], bool usepty) {
 	 *  child_stdout        stdout
 	 *  child_stderr        stderr
 	 */
-	const pid_t pid = vfork();
+	const pid_t pid = fork();
 	switch (pid) {
 		case -1: { /* error */
-			err(EX_OSERR, "vfork");
+			err(EX_OSERR, "fork");
 		}
 		case 0: { /* child */
 			become(stdout_pair, STDOUT_FILENO);
