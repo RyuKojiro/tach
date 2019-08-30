@@ -35,6 +35,7 @@ Escape codes that manipulate horizontal positioning may break out of the pty.
 .Pp
 .Nm
 is line buffered, and the buffer is as large as the width of the pty used to contain the child process.
-In rare cases a child process might emit escape sequences that span the end of the line buffer, causing them to become mangled by the left-hand side timestamp.
+In rare cases a child process might emit escape sequences that span the end of the line buffer, causing them to become mangled by the left-hand side timestamp of the next line.
+Wide characters whose glyph-widths don't line up with their byte-widths can also cause lines to wrap short or long.
 .Sh SEE ALSO
 .Xr time 1
