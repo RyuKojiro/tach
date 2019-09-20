@@ -9,11 +9,10 @@ while True:
     x = x + 1
     y = 10.0 * sin(x / 4.0)
     if x % 2 == 0:
-        sys.stdout.write("+" * int(abs(y)))
-        sys.stdout.write("\n")
-        sys.stdout.flush()
+        fd = sys.stdout
     else:
-        sys.stderr.write("+" * int(abs(y)))
-        sys.stderr.write("\n")
-        sys.stderr.flush()
+        fd = sys.stderr
+    fd.write("+" * int(abs(y)))
+    fd.write("\n")
+    fd.flush()
     sleep(1)

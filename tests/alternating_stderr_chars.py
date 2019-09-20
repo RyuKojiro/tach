@@ -8,11 +8,12 @@ x = 0
 while True:
     x = x + 1
     if x % 2 == 0:
-        sys.stdout.write("+")
-        sys.stdout.flush()
+        fd = sys.stdout
     else:
-        sys.stderr.write("+")
-        sys.stderr.flush()
+        fd = sys.stderr
+
+    fd.write("+")
+    fd.flush()
 
     if x % 15 == 0:
         sys.stdout.write("\n")
