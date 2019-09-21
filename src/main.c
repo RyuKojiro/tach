@@ -20,7 +20,6 @@
  * IN THE SOFTWARE.
  */
 
-#include <assert.h>
 #include <err.h>
 #include <limits.h>
 #include <signal.h>
