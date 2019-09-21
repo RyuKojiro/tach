@@ -202,7 +202,7 @@ int main(int argc, char * const argv[]) {
 				} else {
 					if (nl) {
 						/* Print the final timestamp for this line */
-						if(diff.tv_sec == 0 && diff.tv_nsec <= 1000000) {
+						if(diff.tv_sec == 0 && diff.tv_nsec <= NSEC_PER_MSEC) {
 							printf(COLOR_FAST);
 						}
 						printf(TS_FMT "%s", TS_ARG(diff), lastsep);
