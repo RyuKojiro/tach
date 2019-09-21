@@ -92,8 +92,9 @@ int main(int argc, char * const argv[]) {
 			case 'l': {
 				slow = true;
 			} break;
-			default:
+			default: {
 				usage(progname);
+			} break;
 		}
 	}
 	argc -= optind;
