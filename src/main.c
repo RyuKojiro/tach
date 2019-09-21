@@ -148,6 +148,7 @@ int main(int argc, char * const argv[]) {
 	/* The main kevent loop */
 	bool wrap = false;
 	bool nl = true;
+	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	int numlines = 0;
@@ -193,6 +194,9 @@ int main(int argc, char * const argv[]) {
 			}
 			wrap = lb_full(lb);
 
+			/* Now that something has come out, start showing times */
+			first = false;
+
 			/* Normal idle timestamp update + linebuffer update */
 			printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
 
@@ -226,7 +230,7 @@ int main(int argc, char * const argv[]) {
 
 			/* Store this separator for blanking out before the newline */
 			lastsep = sep;
-		} else if (!slow) {
+		} else if (!first && !slow) {
 			/* Normal idle timestamp update */
 			printf(TS_FMT "\r", TS_ARG(diff));
 		}
