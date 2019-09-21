@@ -63,15 +63,14 @@ static const struct timespec timeout = {
 	.tv_nsec = 17 * NSEC_PER_MSEC, /* ~60 Hz */
 };
 
-static void winch(struct linebuffer *lb_stdout, struct linebuffer *lb_stderr) {
+static void winch(struct linebuffer *lb) {
 	/* Get window size */
 	struct winsize w;
 	ioctl(fileno(stdout), TIOCGWINSZ, &w);
 
 	/* Update buffer */
 	size_t bufsize = w.ws_col ? (w.ws_col - TS_WIDTH - SEP_WIDTH) : PIPE_BUF;
-	lb_resize(lb_stdout, bufsize);
-	lb_resize(lb_stderr, bufsize);
+	lb_resize(lb, bufsize);
 }
 
 static __attribute__((noreturn)) void usage(const char *progname) {
@@ -125,12 +124,11 @@ int main(int argc, char * const argv[]) {
 	clock_gettime(CLOCK_MONOTONIC, &last);
 	const struct timespec start = last;
 
-	/* Allocate line buffers */
-	struct linebuffer *lb_stdout = lb_create();
-	struct linebuffer *lb_stderr = lb_create();
+	/* Allocate line buffer */
+	struct linebuffer *lb = lb_create();
 
 	/* Set up terminal width info tracking */
-	winch(lb_stdout, lb_stderr);
+	winch(lb);
 	EV_SET(ev + 3, SIGWINCH, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
 
 	/*
@@ -174,7 +172,7 @@ int main(int argc, char * const argv[]) {
 			if (triggered.filter == EVFILT_SIGNAL) {
 				switch (triggered.ident) {
 					case SIGWINCH:
-						winch(lb_stdout, lb_stderr);
+						winch(lb);
 						continue;
 					case SIGINT:
 						goto done;
@@ -189,7 +187,6 @@ int main(int argc, char * const argv[]) {
 			/* Figure out which fd it is, and assign the fd-specific variables */
 			const int fd = (int)triggered.ident;
 			const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
-			struct linebuffer *lb = (fd == child.out ? lb_stdout : lb_stderr);
 
 			/* Finalize the previous line and advance */
 			if (nl || wrap) {
@@ -258,8 +255,7 @@ done:
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	/* Cleanup */
-	lb_destroy(lb_stdout);
-	lb_destroy(lb_stderr);
+	lb_destroy(lb);
 	printf("\n");
 
 	/* Final statistics */
