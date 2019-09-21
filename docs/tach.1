@@ -27,6 +27,30 @@ By default,
 is used.
 .El
 .Pp
+.Sh BEHAVIOR
+While running,
+.Nm
+reserves the left 15 columns of the controlling terminal for the timestamp information. The timestamps are displayed as 8 digits of seconds, a decimal point, 3 digits of milliseconds, a space, the separator, and another space.
+Controlling terminals narrower than 15 characters are not supported.
+.Bd -literal -offset indent
+0         1
+012345678901234...
+---------------...
+       0.000 | ...
+---------------...
+.Ed
+.Pp
+The remainder of the terminal is a pty connected to the child process.
+.Pp
+The separator is a space with a gray background, except when the line is appended by output from stderr, in which case the background color of the separator will be red.
+.Pp
+When the child process either terminates or closes its end of the pty,
+.Nm
+completes by outputting a short summary of final statistics about the process. These contain the total runtime, number of lines printed, and longest single line duration.
+.Bd -literal -offset indent
+Total:      1.640191 across 7 lines
+Max:        1.636222
+.Ed
 .Sh CAVEATS
 .Nm
 does not interpret escape codes, they are passed through to the terminal containing
