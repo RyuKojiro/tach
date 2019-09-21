@@ -21,9 +21,9 @@ Low bandwidth mode. This minimizes the number of unnecessary screen updates, rat
 Connect the child process using
 .Fn pipe
 rather than
-.Fn openpty .
+.Fn posix_openpt .
 By default,
-.Fn openpty
+.Fn posix_openpt
 is used.
 .El
 .Pp
