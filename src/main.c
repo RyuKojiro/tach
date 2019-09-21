@@ -148,7 +148,6 @@ int main(int argc, char * const argv[]) {
 	/* The main kevent loop */
 	bool wrap = false;
 	bool nl = true;
-	bool first = true;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	int numlines = 0;
@@ -188,45 +187,6 @@ int main(int argc, char * const argv[]) {
 			const int fd = (int)triggered.ident;
 			const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
 
-			/* Finalize the previous line and advance */
-			if (nl || wrap) {
-				if (first) {
-					/*
-					 * Line number 0 is the lead up to the first line, it is
-					 * ignored and discarded to avoid ending up with a time
-					 * calumn that is always guaranteed to result in a blank
-					 * line at the beginning of every tach invocation.
-					 */
-					numlines++;
-					first = false;
-				} else {
-					if (nl) {
-						/* Print the final timestamp for this line */
-						if(diff.tv_sec == 0 && diff.tv_nsec <= NSEC_PER_MSEC) {
-							printf(COLOR_FAST);
-						}
-						printf(TS_FMT "%s", TS_ARG(diff), lastsep);
-
-						/* Update running statistics */
-						if (timespec_compare(&diff, &max)) {
-							max = diff;
-						}
-
-						/* Update the start-of-line timestamp we'll diff against */
-						last = now;
-						numlines++;
-					} else if (wrap) {
-						/* Blank out the timestamp for this line, since it wraps */
-						printf("%*s%s", TS_WIDTH, "", lastsep);
-					}
-
-					printf("\n");
-				}
-
-				/* We have successfully flushed this line to the terminal */
-				lb_reset(lb);
-			}
-
 			/* Read the triggering event */
 			if(!lb_read(lb, fd, &nl)) {
 				err(EX_IOERR, "read");
@@ -236,9 +196,37 @@ int main(int argc, char * const argv[]) {
 			/* Normal idle timestamp update + linebuffer update */
 			printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
 
+			/* Finalize the previous line and advance */
+			if (nl || wrap) {
+				if (nl) {
+					/* Print the final timestamp for this line */
+					if(diff.tv_sec == 0 && diff.tv_nsec <= NSEC_PER_MSEC) {
+						printf(COLOR_FAST);
+					}
+					printf(TS_FMT "%s", TS_ARG(diff), lastsep);
+
+					/* Update running statistics */
+					if (timespec_compare(&diff, &max)) {
+						max = diff;
+					}
+
+					/* Update the start-of-line timestamp we'll diff against */
+					last = now;
+					numlines++;
+				} else if (wrap) {
+					/* Blank out the timestamp for this line, since it wraps */
+					printf("%*s%s", TS_WIDTH, "", lastsep);
+				}
+
+				printf("\n");
+
+				/* We have successfully flushed this line to the terminal */
+				lb_reset(lb);
+			}
+
 			/* Store this separator for blanking out before the newline */
 			lastsep = sep;
-		} else if (!first && !slow) {
+		} else if (!slow) {
 			/* Normal idle timestamp update */
 			printf(TS_FMT "\r", TS_ARG(diff));
 		}
