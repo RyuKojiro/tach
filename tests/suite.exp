@@ -64,7 +64,15 @@ close $f
 # TODO: line count for 0, 1, n
 
 # X: Newlines
-# TODO: tach echo -n, ensure no empty lines
+send_user "Testing that tach preserves the number of newlines that traverse it...\n"
+spawn $tach "echo" "-n"
+expect {
+	"\\-n" {
+		send_user "This platform's echo doesn't support -n. Test skipped."
+	} -re "^\r" {
+		fail
+	}
+}
 
 if {$failures == 0} {
 	puts [concat $green "All tests passed." $normal "\n"]
