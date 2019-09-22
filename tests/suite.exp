@@ -8,11 +8,14 @@ set red	    "\x1b\x5b\x31\x3b\x33\x31\x3b\x34\x30\x6d"
 set green	"\x1b\x5b\x31\x3b\x33\x32\x3b\x34\x30\x6d"
 set normal	"\x1b\x5b\x31\x3b\x30\x3b\x34\x30\x6d"
 
+set failures 0
+
 proc fail {} {
 	global red
 	global normal
+	global failures
 	puts [concat $red "Failure!" $normal "\n"]
-	exit 1
+	incr failures
 }
 
 # 1: 15 columns; <=7 spaces, color escapes, >0 <9 seconds digits, '.'
@@ -47,4 +50,6 @@ if {$stage != 1} {
 # X: Newlines
 # TODO: tach echo -n, ensure no empty lines
 
-puts [concat $green "All tests passed." $normal "\n"]
+if {$failures == 0} {
+	puts [concat $green "All tests passed." $normal "\n"]
+}
