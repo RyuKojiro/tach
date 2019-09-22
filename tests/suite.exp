@@ -3,6 +3,7 @@
 log_user 0
 
 set tach "./tach"
+set known "tests/known_lines.txt"
 
 set red	    "\x1b\x5b\x31\x3b\x33\x31\x3b\x34\x30\x6d"
 set green	"\x1b\x5b\x31\x3b\x33\x32\x3b\x34\x30\x6d"
@@ -37,7 +38,22 @@ if {$stage != 1} {
 }
 
 # 2: pty from 15 to n columns
-# TODO: tach cat known_lines.txt, compare output to known_lines.txt
+send_user "Testing tach's pty output against expected output...\n"
+set f [open $known]
+spawn $tach "cat" $known
+while {[gets $f line] != -1} {
+    expect "$line" {
+	} timeout {
+		send_user "Never saw \"$line\"\n"
+		fail
+		break
+	} eof {
+		send_user "Never saw \"$line\"\n"
+		fail
+		break
+	}
+}
+close $f
 
 # 3: separator color
 # TODO: alternating lines line up properly
