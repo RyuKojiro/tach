@@ -1,5 +1,9 @@
 #!/usr/bin/expect
 
+log_user 0
+
+set tach "./tach"
+
 set red	    "\x1b\x5b\x31\x3b\x33\x31\x3b\x34\x30\x6d"
 set green	"\x1b\x5b\x31\x3b\x33\x32\x3b\x34\x30\x6d"
 set normal	"\x1b\x5b\x31\x3b\x30\x3b\x34\x30\x6d"
@@ -13,7 +17,21 @@ proc fail {} {
 
 # 1: 15 columns; <=7 spaces, color escapes, >0 <9 seconds digits, '.'
 #    3 ms digits, ' ', color escapes, separator char, color escapes, ' '
-# TODO: hefty regex
+send_user "Testing that the first 15 columns look as expected...\n"
+spawn $tach "echo" "test"
+set stage 0
+expect {
+	-re "^\[ 0-9\]{8}\.\[0-9]{3}.*test" {
+		incr stage
+		exp_continue
+	} timeout {
+		fail
+	}
+}
+
+if {$stage != 1} {
+	fail
+}
 
 # 2: pty from 15 to n columns
 # TODO: tach cat known_lines.txt, compare output to known_lines.txt
