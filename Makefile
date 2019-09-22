@@ -8,6 +8,8 @@ DESTDIR?= /
 SECTION=  1
 MANPAGE=  docs/$(PROGNAME).$(SECTION)
 
+all: test
+
 $(PROGNAME): $(OBJS)
 	$(CC) $(LDFLAGS) -o $(PROGNAME) $(OBJS)
 
@@ -21,9 +23,12 @@ install: $(PROGNAME)
 clean: 
 	rm -f $(PROGNAME) $(OBJS)
 
+test: $(PROGNAME)
+	tests/suite.exp
+
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-.PHONY: clean install linux
-	
+.PHONY: clean install linux test
+
 .POSIX:

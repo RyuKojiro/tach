@@ -1,0 +1,32 @@
+#!/usr/bin/expect
+
+set red	    "\x1b\x5b\x31\x3b\x33\x31\x3b\x34\x30\x6d"
+set green	"\x1b\x5b\x31\x3b\x33\x32\x3b\x34\x30\x6d"
+set normal	"\x1b\x5b\x31\x3b\x30\x3b\x34\x30\x6d"
+
+proc fail {} {
+	global red
+	global normal
+	puts [concat $red "Failure!" $normal "\n"]
+	exit 1
+}
+
+# 1: 15 columns; <=7 spaces, color escapes, >0 <9 seconds digits, '.'
+#    3 ms digits, ' ', color escapes, separator char, color escapes, ' '
+# TODO: hefty regex
+
+# 2: pty from 15 to n columns
+# TODO: tach cat known_lines.txt, compare output to known_lines.txt
+
+# 3: separator color
+# TODO: alternating lines line up properly
+
+# 4: Summary statistics; Total:      1.640191 across 7 lines
+#                        Max:        1.636222
+# TODO: closing the pty, and exiting
+# TODO: line count for 0, 1, n
+
+# X: Newlines
+# TODO: tach echo -n, ensure no empty lines
+
+puts [concat $green "All tests passed." $normal "\n"]
