@@ -38,7 +38,7 @@ if {$stage != 1} {
 }
 
 # 2: pty from 15 to n columns
-send_user "Testing tach's pty output against expected output...\n"
+send_user "Testing pty output against expected output...\n"
 set f [open $known]
 spawn $tach "cat" $known
 while {[gets $f line] != -1} {
@@ -111,7 +111,7 @@ expect {
 }
 
 # X: Newlines
-send_user "Testing that tach preserves the number of newlines that traverse it...\n"
+send_user "Testing that no input produces no output...\n"
 spawn $tach "echo" "-n"
 expect {
 	"\\-n" {
