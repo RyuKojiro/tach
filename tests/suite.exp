@@ -61,7 +61,54 @@ close $f
 # 4: Summary statistics; Total:      1.640191 across 7 lines
 #                        Max:        1.636222
 # TODO: closing the pty, and exiting
-# TODO: line count for 0, 1, n
+
+# 4b: line counting
+send_user "Testing line counting with 0 lines...\n"
+spawn $tach "echo" "-n"
+expect {
+	"\\-n" {
+		send_user "This platform's echo doesn't support -n. Test skipped."
+	} -re "Total:.*across 0 lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
+
+send_user "Testing line counting with 1 line...\n"
+spawn $tach "echo" "asdf"
+expect {
+	"asdf" {
+		exp_continue
+	} -re "Total:.*across 1 lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
+
+# Get a line count from the $known
+set n 0
+set f [open $known]
+while {[gets $f line] > -1} {incr n}
+close $f
+
+if {$n <= 1} {
+	send_user "Known text file is not long enough for n-line count test!\n"
+	fail
+}
+
+send_user "Testing line counting with $n lines...\n"
+spawn $tach "cat" $known
+expect {
+	"asdf" {
+		exp_continue
+	} -re "Total:.*across $n lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
 
 # X: Newlines
 send_user "Testing that tach preserves the number of newlines that traverse it...\n"
