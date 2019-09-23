@@ -149,6 +149,7 @@ int main(int argc, char * const argv[]) {
 	bool wrap = false;
 	bool nl = true;
 	bool first = true;
+	bool dead = false;
 	struct kevent triggered;
 	struct timespec now, max = {0,0};
 	int numlines = 0;
@@ -165,7 +166,7 @@ int main(int argc, char * const argv[]) {
 		if (nev) {
 			/* Is the child done? */
 			if (triggered.flags & EV_EOF) {
-				break;
+				dead = true;
 			}
 
 			/* Did we get a signal? */
@@ -175,61 +176,70 @@ int main(int argc, char * const argv[]) {
 						winch(lb);
 						continue;
 					case SIGINT:
-						goto done;
+						dead = true;
 				}
 			}
 
 			/* Did the child exit? */
 			if (triggered.filter == EVFILT_PROC && triggered.fflags & NOTE_EXIT) {
-				break;
+				dead = true;
 			}
 
-			/* Figure out which fd it is, and assign the fd-specific variables */
-			const int fd = (int)triggered.ident;
-			const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
+			/* Did the child say something? */
+			if (triggered.filter == EVFILT_READ) {
+				/* Figure out which fd it is, and assign the fd-specific variables */
+				const int fd = (int)triggered.ident;
+				const char *sep = (fd == child.out ? SEP_FMT : SEP_FMT_ERR);
 
-			/* Read the triggering event */
-			if(!lb_read(lb, fd, &nl)) {
-				err(EX_IOERR, "read");
-			}
-			wrap = lb_full(lb);
-
-			/* Now that something has come out, start showing times */
-			first = false;
-
-			/* Normal idle timestamp update + linebuffer update */
-			printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
-
-			/* Finalize the previous line and advance */
-			if (nl || wrap) {
-				if (nl) {
-					/* Print the final timestamp for this line */
-					if(diff.tv_sec == 0 && diff.tv_nsec <= NSEC_PER_MSEC) {
-						printf(COLOR_FAST);
+				/* Read the triggering event */
+				if(!lb_read(lb, fd, &nl)) {
+					if (dead) {
+						break;
 					}
-					printf(TS_FMT "%s", TS_ARG(diff), lastsep);
+					err(EX_IOERR, "read");
+				}
+				wrap = lb_full(lb);
 
-					/* Update running statistics */
-					if (timespec_compare(&diff, &max)) {
-						max = diff;
+				/* Now that something has come out, start showing times */
+				first = false;
+
+				/* Normal idle timestamp update + linebuffer update */
+				printf(TS_FMT "%s%s\r", TS_ARG(diff), sep, lb->buf);
+
+				/* Finalize the previous line and advance */
+				if (nl || wrap) {
+					if (nl) {
+						/* Print the final timestamp for this line */
+						if(diff.tv_sec == 0 && diff.tv_nsec <= NSEC_PER_MSEC) {
+							printf(COLOR_FAST);
+						}
+						printf(TS_FMT "%s", TS_ARG(diff), lastsep);
+
+						/* Update running statistics */
+						if (timespec_compare(&diff, &max)) {
+							max = diff;
+						}
+
+						/* Update the start-of-line timestamp we'll diff against */
+						last = now;
+						numlines++;
+					} else if (wrap) {
+						/* Blank out the timestamp for this line, since it wraps */
+						printf("%*s%s", TS_WIDTH, "", lastsep);
 					}
 
-					/* Update the start-of-line timestamp we'll diff against */
-					last = now;
-					numlines++;
-				} else if (wrap) {
-					/* Blank out the timestamp for this line, since it wraps */
-					printf("%*s%s", TS_WIDTH, "", lastsep);
+					printf("\n");
+
+					/* We have successfully flushed this line to the terminal */
+					lb_reset(lb);
 				}
 
-				printf("\n");
-
-				/* We have successfully flushed this line to the terminal */
-				lb_reset(lb);
+				/* Store this separator for blanking out before the newline */
+				lastsep = sep;
 			}
-
-			/* Store this separator for blanking out before the newline */
-			lastsep = sep;
+		} else if (dead) {
+			/* Child is dead and events have been exhausted */
+			break;
 		} else if (!first && !slow) {
 			/* Normal idle timestamp update */
 			printf(TS_FMT "\r", TS_ARG(diff));
@@ -242,13 +252,11 @@ int main(int argc, char * const argv[]) {
 		err(EX_IOERR, "kevent");
 	}
 
-done:
 	/* Final timestamp, just in case we spent time waiting on a signal or EOF */
 	clock_gettime(CLOCK_MONOTONIC, &now);
 
 	/* Cleanup */
 	lb_destroy(lb);
-	printf("\n");
 
 	/* Final statistics */
 	const struct timespec total = timespec_subtract(&now, &start);
