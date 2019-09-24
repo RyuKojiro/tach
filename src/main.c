@@ -20,6 +20,7 @@
  * IN THE SOFTWARE.
  */
 
+#include <assert.h>
 #include <err.h>
 #include <limits.h>
 #include <signal.h>
@@ -164,6 +165,8 @@ int main(int argc, char * const argv[]) {
 		 * The triggered structure shall not be accessed outside this block.
 		 */
 		if (nev) {
+			assert(nev == 1);
+
 			/* Is the child done? */
 			if (triggered.flags & EV_EOF) {
 				dead = true;
