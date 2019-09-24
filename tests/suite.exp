@@ -20,5 +20,6 @@ proc fail {} {
 proc pass {} {
 	global green
 	global normal
-	puts [concat $green "Pass." $normal "\n"]
+	#puts [concat $green "Pass." $normal "\n"]
+	exit 0
 }
