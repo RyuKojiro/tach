@@ -1,0 +1,16 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+# 5: Newlines
+send_user "Testing that no input produces no output...\n"
+spawn $tach "echo" "-n"
+expect {
+	"\\-n" {
+		send_user "This platform's echo doesn't support -n. Test skipped."
+	} -re "^\r" {
+		fail
+	}
+}
+
+pass

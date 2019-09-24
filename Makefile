@@ -24,12 +24,7 @@ clean:
 	rm -f $(PROGNAME) $(OBJS)
 
 test: $(PROGNAME)
-	@if which expect > /dev/null; \
-	then \
-		expect tests/suite.exp; \
-	else \
-		echo "Not running tests, since expect was not found in PATH."; \
-	fi
+	$(MAKE) -C tests $(MAKEFLAGS)
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<

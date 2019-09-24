@@ -1,0 +1,23 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+# 1: 15 columns; <=7 spaces, color escapes, >0 <9 seconds digits, '.'
+#    3 ms digits, ' ', color escapes, separator char, color escapes, ' '
+send_user "Testing that the first 15 columns look as expected...\n"
+spawn $tach "echo" "test"
+set stage 0
+expect {
+	-re "^\[ 0-9\]{8}\.\[0-9]{3}.*test" {
+		incr stage
+		exp_continue
+	} timeout {
+		fail
+	}
+}
+
+if {$stage != 1} {
+	fail
+}
+
+pass

@@ -1,0 +1,30 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+# 4d: line counting
+
+# Get a line count from the $known
+set n 0
+set f [open $known]
+while {[gets $f line] > -1} {incr n}
+close $f
+
+if {$n <= 1} {
+	send_user "Known text file is not long enough for n-line count test!\n"
+	fail
+}
+
+send_user "Testing line counting with $n lines...\n"
+spawn $tach "cat" $known
+expect {
+	"asdf" {
+		exp_continue
+	} -re "Total:.*across $n lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
+
+pass

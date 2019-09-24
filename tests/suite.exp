@@ -2,125 +2,23 @@
 
 log_user 0
 
-set tach "./tach"
-set known "tests/known_lines.txt"
+set tach "../tach"
+set known "known_lines.txt"
 
 set red	    "\x1b\x5b\x31\x3b\x33\x31\x3b\x34\x30\x6d"
 set green	"\x1b\x5b\x31\x3b\x33\x32\x3b\x34\x30\x6d"
 set normal	"\x1b\x5b\x31\x3b\x30\x3b\x34\x30\x6d"
-
-set failures 0
 
 proc fail {} {
 	global red
 	global normal
 	global failures
 	puts [concat $red "Failure!" $normal "\n"]
-	incr failures
+	exit 1
 }
 
-# 1: 15 columns; <=7 spaces, color escapes, >0 <9 seconds digits, '.'
-#    3 ms digits, ' ', color escapes, separator char, color escapes, ' '
-send_user "Testing that the first 15 columns look as expected...\n"
-spawn $tach "echo" "test"
-set stage 0
-expect {
-	-re "^\[ 0-9\]{8}\.\[0-9]{3}.*test" {
-		incr stage
-		exp_continue
-	} timeout {
-		fail
-	}
-}
-
-if {$stage != 1} {
-	fail
-}
-
-# 2: pty from 15 to n columns
-send_user "Testing pty output against expected output...\n"
-set f [open $known]
-spawn $tach "cat" $known
-while {[gets $f line] != -1} {
-    expect "$line" {
-	} timeout {
-		send_user "Never saw \"$line\"\n"
-		fail
-		break
-	} eof {
-		send_user "Never saw \"$line\"\n"
-		fail
-		break
-	}
-}
-close $f
-
-# 3: separator color
-# TODO: alternating lines line up properly
-
-# 4: Summary statistics; Total:      1.640191 across 7 lines
-#                        Max:        1.636222
-# TODO: closing the pty, and exiting
-
-# 4b: line counting
-send_user "Testing line counting with 0 lines...\n"
-spawn $tach "echo" "-n"
-expect {
-	"\\-n" {
-		send_user "This platform's echo doesn't support -n. Test skipped."
-	} -re "Total:.*across 0 lines" {
-		# pass
-	} eof {
-		fail
-	}
-}
-
-send_user "Testing line counting with 1 line...\n"
-spawn $tach "echo" "asdf"
-expect {
-	"asdf" {
-		exp_continue
-	} -re "Total:.*across 1 lines" {
-		# pass
-	} eof {
-		fail
-	}
-}
-
-# Get a line count from the $known
-set n 0
-set f [open $known]
-while {[gets $f line] > -1} {incr n}
-close $f
-
-if {$n <= 1} {
-	send_user "Known text file is not long enough for n-line count test!\n"
-	fail
-}
-
-send_user "Testing line counting with $n lines...\n"
-spawn $tach "cat" $known
-expect {
-	"asdf" {
-		exp_continue
-	} -re "Total:.*across $n lines" {
-		# pass
-	} eof {
-		fail
-	}
-}
-
-# X: Newlines
-send_user "Testing that no input produces no output...\n"
-spawn $tach "echo" "-n"
-expect {
-	"\\-n" {
-		send_user "This platform's echo doesn't support -n. Test skipped."
-	} -re "^\r" {
-		fail
-	}
-}
-
-if {$failures == 0} {
-	puts [concat $green "All tests passed." $normal "\n"]
+proc pass {} {
+	global green
+	global normal
+	puts [concat $green "Pass." $normal "\n"]
 }

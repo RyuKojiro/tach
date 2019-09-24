@@ -1,0 +1,18 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+#4c: line counting
+send_user "Testing line counting with 1 line...\n"
+spawn $tach "echo" "asdf"
+expect {
+	"asdf" {
+		exp_continue
+	} -re "Total:.*across 1 lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
+
+pass

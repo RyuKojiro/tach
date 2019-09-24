@@ -1,0 +1,18 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+# 4b: line counting
+send_user "Testing line counting with 0 lines...\n"
+spawn $tach "echo" "-n"
+expect {
+	"\\-n" {
+		send_user "This platform's echo doesn't support -n. Test skipped.\n"
+	} -re "Total:.*across 0 lines" {
+		# pass
+	} eof {
+		fail
+	}
+}
+
+pass

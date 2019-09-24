@@ -1,0 +1,23 @@
+#!/usr/bin/expect
+
+source suite.exp
+
+# 2: pty from 15 to n columns
+send_user "Testing pty output against expected output...\n"
+set f [open $known]
+spawn $tach "cat" $known
+while {[gets $f line] != -1} {
+    expect "$line" {
+	} timeout {
+		send_user "Never saw \"$line\"\n"
+		fail
+		break
+	} eof {
+		send_user "Never saw \"$line\"\n"
+		fail
+		break
+	}
+}
+close $f
+
+pass
