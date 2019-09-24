@@ -24,7 +24,7 @@ clean:
 	rm -f $(PROGNAME) $(OBJS)
 
 test: $(PROGNAME)
-	$(MAKE) -C tests $(MAKEFLAGS)
+	$(MAKE) -C tests $(MFLAGS)
 
 .c.o:
 	$(CC) $(CFLAGS) -c -o $@ $<
