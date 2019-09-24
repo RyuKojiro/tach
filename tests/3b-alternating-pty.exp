@@ -1,0 +1,27 @@
+#!/usr/bin/env expect
+
+source suite.exp
+
+set seq "shared_sequence.txt"
+
+# 3b: validate alternating sequence text
+send_user "Testing stdout/stderr line buffer sanity...\n"
+set f [open $seq]
+spawn $tach "./shared_sequence.py"
+set n 0
+while {[gets $f line] != -1} {
+	incr n
+    expect "$line" {
+	} timeout {
+		send_user "Never saw \"$line\" on line $n\n"
+		fail
+		break
+	} eof {
+		send_user "Never saw \"$line\" on line $n\n"
+		fail
+		break
+	}
+}
+close $f
+
+pass

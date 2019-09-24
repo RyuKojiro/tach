@@ -9,3 +9,4 @@ fds = [sys.stdout, sys.stderr]
 for i in range(len(seq)):
     fd = i % 2
     print((names[fd] + "\n") * seq[i], file=fds[fd], end="")
+    fds[fd].flush()
