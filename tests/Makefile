@@ -9,6 +9,8 @@ test: 1-fifteen-columns 2-pty-expected 4b-zero-lines 4c-one-line 4d-n-lines 5-ne
 		echo "Not running tests, since expect was not found in PATH."; \
 	fi
 
+.SUFFIXES: .exp
+
 .exp: $(PROG)
 	@if which expect > /dev/null; \
 	then \
@@ -17,8 +19,6 @@ test: 1-fifteen-columns 2-pty-expected 4b-zero-lines 4c-one-line 4d-n-lines 5-ne
 
 $(PROG):
 	make -C .. $(PROGNAME)
-
-.SUFFIXES: .exp .text
 
 .PHONY: test
 
