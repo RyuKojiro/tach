@@ -1,7 +1,7 @@
 PROGNAME=tach
 PROG=../$(PROGNAME)
 
-test: 1-fifteen-columns 2-pty-expected 4b-zero-lines 4c-one-line 4d-n-lines 5-newline-io
+test: 1-fifteen-columns 2-pty-expected 3b-alternating-pty 4b-zero-lines 4c-one-line 4d-n-lines 5-newline-io
 	@if which expect > /dev/null; \
 	then \
 		echo "Done running tests."; \
