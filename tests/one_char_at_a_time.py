@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 from time import sleep
 from math import sin
@@ -12,4 +12,4 @@ while True:
         sys.stdout.write("+")
         sys.stdout.flush()
         sleep(.3)
-    print "nl"
+    print("nl")
